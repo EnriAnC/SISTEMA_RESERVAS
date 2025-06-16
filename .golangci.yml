@@ -1,0 +1,119 @@
+# Configuración de golangci-lint para el Sistema de Reservas
+# Esta configuración se aplica a todos los servicios Go del proyecto
+
+run:
+  # Timeout para el análisis
+  timeout: 5m
+  
+  # Directorios a excluir del análisis  
+  skip-dirs:
+    - vendor
+    - .git
+    - bin
+    - tmp
+  
+  # Archivos a excluir
+  skip-files:
+    - ".*_test.go"
+    - ".*\\.pb\\.go"
+
+# Configuración de issues
+issues:
+  # Incluir todos los issues por defecto
+  include:
+    - EXC0002 # disable excluding of issues about comments from golint
+  
+  # Excluir algunos issues específicos que pueden ser falsos positivos
+  exclude-rules:
+    # Excluir errores de comentarios en archivos de prueba
+    - path: _test\.go
+      linters:
+        - golint
+        - errcheck
+    
+    # Excluir algunos errores comunes de configuración inicial
+    - text: "should have comment or be unexported"
+      linters:
+        - golint
+
+# Linters a ejecutar
+linters:
+  # Habilitar linters específicos
+  enable:
+    - errcheck        # Verificar errores no manejados
+    - gosimple        # Simplificaciones posibles
+    - govet           # Análisis estático de Go
+    - ineffassign     # Asignaciones ineficientes
+    - staticcheck     # Análisis estático avanzado
+    - typecheck       # Verificación de tipos
+    - unused          # Código no utilizado
+    - misspell        # Errores de ortografía
+    - gofmt           # Formato del código
+    - goimports       # Imports organizados
+    - golint          # Estilo de código Go
+    - goconst         # Constantes repetidas
+    - gocyclo         # Complejidad ciclomática
+    - gosec           # Seguridad básica
+    - gocritic        # Análisis crítico
+    
+  # Deshabilitar linters que pueden ser muy estrictos para un proyecto inicial
+  disable:
+    - gochecknoinits  # Muy estricto para proyectos con init()
+    - gochecknoglobals # Muy estricto para configuración global
+    - funlen          # Longitud de funciones (muy estricto)
+    - lll             # Longitud de líneas (configurado por separado)
+
+# Configuración específica de linters
+linters-settings:
+  # Configuración de errcheck
+  errcheck:
+    # Funciones cuyo error return puede ser ignorado
+    ignore: fmt:.*,io/ioutil:^Read.*
+    
+  # Configuración de golint
+  golint:
+    # Nivel mínimo de confianza para reportar issues
+    min-confidence: 0.8
+    
+  # Configuración de gocyclo
+  gocyclo:
+    # Complejidad máxima permitida
+    min-complexity: 10
+    
+  # Configuración de goconst
+  goconst:
+    # Número mínimo de ocurrencias para sugerir constante
+    min-len: 3
+    min-occurrences: 3
+    
+  # Configuración de misspell
+  misspell:
+    # Idioma para verificación ortográfica
+    locale: US
+    
+  # Configuración de goimports
+  goimports:
+    # Prefijo local para imports
+    local-prefixes: sistema-reservas
+    
+  # Configuración de gosec
+  gosec:
+    # Incluir reglas de prueba
+    includes:
+      - G401
+      - G501
+      - G502
+    # Excluir reglas muy estrictas para desarrollo
+    excludes:
+      - G104 # Errors unhandled (cubierto por errcheck)
+      
+  # Configuración de gocritic
+  gocritic:
+    # Habilitar solo checks específicos para evitar ruido
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - unnamedResult
+      - hugeParam

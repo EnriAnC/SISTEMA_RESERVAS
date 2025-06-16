@@ -1,5 +1,13 @@
 # Sistema de Reservas en la Nube
 
+<!-- Badges de Estado del Proyecto -->
+[![CI Pipeline](https://github.com/enrianc/sistema-reservas/actions/workflows/ci.yml/badge.svg)](https://github.com/enrianc/sistema-reservas/actions/workflows/ci.yml)
+[![Validation Pipeline](https://github.com/enrianc/sistema-reservas/actions/workflows/validate.yml/badge.svg)](https://github.com/enrianc/sistema-reservas/actions/workflows/validate.yml)
+[![Security Analysis](https://github.com/enrianc/sistema-reservas/actions/workflows/security.yml/badge.svg)](https://github.com/enrianc/sistema-reservas/actions/workflows/security.yml)
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://www.docker.com)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5?style=flat&logo=kubernetes)](https://kubernetes.io)
+
 ## Descripción
 Sistema de reservas escalable basado en microservicios desarrollado en Go, diseñado para manejar reservas de recursos con alta disponibilidad y escalabilidad automática.
 

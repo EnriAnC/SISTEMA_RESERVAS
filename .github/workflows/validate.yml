@@ -1,0 +1,255 @@
+# Workflow de Validación de Archivos
+# Valida sintaxis de Docker, Kubernetes, YAML y Markdown
+
+name: ✅ Validation Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Job 1: Validación de Dockerfiles
+  validate-docker:
+    name: 🐳 Validar Dockerfiles
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    # Instalar hadolint para validar Dockerfiles
+    - name: 🔧 Instalar Hadolint
+      run: |
+        wget -O hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+        chmod +x hadolint
+        sudo mv hadolint /usr/local/bin/
+        
+    - name: 🔍 Validar Dockerfiles de servicios
+      run: |
+        echo "🐳 Validando Dockerfiles..."
+        
+        # Lista de Dockerfiles a validar
+        dockerfiles=(
+          "services/user-service/Dockerfile"
+          "services/resource-service/Dockerfile"
+          "services/booking-service/Dockerfile"
+          "services/notification-service/Dockerfile"
+          "api-gateway/Dockerfile"
+        )
+        
+        error_count=0
+        
+        for dockerfile in "${dockerfiles[@]}"; do
+          if [ -f "$dockerfile" ]; then
+            echo "🔍 Validando $dockerfile..."
+            if hadolint "$dockerfile"; then
+              echo "✅ $dockerfile es válido"
+            else
+              echo "❌ $dockerfile tiene errores"
+              error_count=$((error_count + 1))
+            fi
+          else
+            echo "⚠️ $dockerfile no encontrado"
+          fi
+          echo "---"
+        done
+        
+        if [ $error_count -gt 0 ]; then
+          echo "❌ Se encontraron $error_count errores en Dockerfiles"
+          exit 1
+        else
+          echo "🎉 Todos los Dockerfiles son válidos"
+        fi
+
+  # Job 2: Validación de archivos YAML (Kubernetes y Docker Compose)
+  validate-yaml:
+    name: 📄 Validar YAML
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    # Instalar yamllint para validar sintaxis YAML
+    - name: 🔧 Instalar yamllint
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y yamllint
+        
+    # Crear configuración de yamllint
+    - name: ⚙️ Configurar yamllint
+      run: |
+        cat > .yamllint.yml << EOF
+        extends: default
+        rules:
+          line-length:
+            max: 120
+          indentation:
+            spaces: 2
+          trailing-spaces: enable
+          empty-lines:
+            max-end: 1
+          comments:
+            min-spaces-from-content: 1
+        EOF
+        
+    - name: 🔍 Validar archivos Kubernetes
+      run: |
+        echo "☸️ Validando manifiestos de Kubernetes..."
+        
+        if [ -d "kubernetes" ]; then
+          find kubernetes -name "*.yaml" -o -name "*.yml" | while read -r file; do
+            echo "🔍 Validando $file..."
+            if yamllint -c .yamllint.yml "$file"; then
+              echo "✅ $file es válido"
+            else
+              echo "❌ $file tiene errores de sintaxis"
+              exit 1
+            fi
+          done
+        else
+          echo "⚠️ Directorio kubernetes no encontrado"
+        fi
+        
+    - name: 🔍 Validar docker-compose.yml
+      run: |
+        echo "🐳 Validando docker-compose.yml..."
+        
+        compose_files=(
+          "infrastructure/docker-compose.yml"
+          "docker-compose.yml"
+        )
+        
+        for compose_file in "${compose_files[@]}"; do
+          if [ -f "$compose_file" ]; then
+            echo "🔍 Validando $compose_file..."
+            if yamllint -c .yamllint.yml "$compose_file"; then
+              echo "✅ $compose_file es válido"
+            else
+              echo "❌ $compose_file tiene errores de sintaxis"
+              exit 1
+            fi
+          fi
+        done
+        
+    # Validar sintaxis de Docker Compose con docker-compose
+    - name: 🐳 Validar sintaxis Docker Compose
+      run: |
+        if [ -f "infrastructure/docker-compose.yml" ]; then
+          echo "🔍 Validando sintaxis de Docker Compose..."
+          cd infrastructure
+          if docker-compose config > /dev/null 2>&1; then
+            echo "✅ docker-compose.yml tiene sintaxis válida"
+          else
+            echo "❌ docker-compose.yml tiene errores de sintaxis"
+            docker-compose config
+            exit 1
+          fi
+        fi
+
+  # Job 3: Validación de archivos Markdown
+  validate-markdown:
+    name: 📝 Validar Markdown
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Instalar markdownlint
+      run: |
+        npm install -g markdownlint-cli
+        
+    # Crear configuración para markdownlint
+    - name: ⚙️ Configurar markdownlint
+      run: |
+        cat > .markdownlint.json << EOF
+        {
+          "MD013": {
+            "line_length": 120,
+            "tables": false
+          },
+          "MD033": false,
+          "MD041": false
+        }
+        EOF
+        
+    - name: 🔍 Validar archivos Markdown
+      run: |
+        echo "📝 Validando archivos Markdown..."
+        
+        # Encontrar todos los archivos .md
+        find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | while read -r file; do
+          echo "🔍 Validando $file..."
+          if markdownlint -c .markdownlint.json "$file"; then
+            echo "✅ $file es válido"
+          else
+            echo "❌ $file tiene errores de formato"
+            exit 1
+          fi
+        done
+        
+        echo "🎉 Todos los archivos Markdown son válidos"
+
+  # Job 4: Validación de archivos JSON
+  validate-json:
+    name: 🔧 Validar JSON
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Validar archivos JSON
+      run: |
+        echo "🔧 Validando archivos JSON..."
+        
+        # Encontrar y validar archivos JSON
+        find . -name "*.json" -not -path "./node_modules/*" -not -path "./.git/*" | while read -r file; do
+          echo "🔍 Validando $file..."
+          if python3 -m json.tool "$file" > /dev/null 2>&1; then
+            echo "✅ $file es válido"
+          else
+            echo "❌ $file tiene errores de sintaxis JSON"
+            python3 -m json.tool "$file"
+            exit 1
+          fi
+        done
+        
+        echo "🎉 Todos los archivos JSON son válidos"
+
+  # Job 5: Validación de scripts bash
+  validate-scripts:
+    name: 🔨 Validar Scripts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Instalar ShellCheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+        
+    - name: 🔍 Validar scripts bash
+      run: |
+        echo "🔨 Validando scripts bash..."
+        
+        if [ -d "scripts" ]; then
+          find scripts -name "*.sh" | while read -r script; do
+            echo "🔍 Validando $script..."
+            if shellcheck "$script"; then
+              echo "✅ $script es válido"
+            else
+              echo "❌ $script tiene errores"
+              exit 1
+            fi
+          done
+        else
+          echo "⚠️ Directorio scripts no encontrado"
+        fi
+        
+        echo "🎉 Todos los scripts son válidos"

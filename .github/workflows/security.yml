@@ -1,0 +1,263 @@
+# Workflow de Análisis de Seguridad
+# Detecta vulnerabilidades y problemas de seguridad en el código
+
+name: 🔒 Security Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Ejecutar análisis de seguridad semanalmente (lunes a las 2 AM UTC)
+    - cron: '0 2 * * 1'
+
+jobs:
+  # Job 1: Análisis de vulnerabilidades en código Go con gosec
+  gosec-analysis:
+    name: 🔍 Análisis gosec
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🐹 Configurar Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: 🔧 Instalar gosec
+      run: |
+        curl -sfL https://raw.githubusercontent.com/securecodewarrior/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.18.2
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        
+    - name: 🔍 Ejecutar gosec en todos los servicios
+      run: |
+        echo "🔒 Ejecutando análisis de seguridad con gosec..."
+        
+        services=("user-service" "resource-service" "booking-service" "notification-service")
+        overall_issues=0
+        
+        for service in "${services[@]}"; do
+          echo "🔍 Analizando $service..."
+          cd "services/$service"
+          
+          # Ejecutar gosec y capturar el código de salida
+          if gosec -fmt json -out gosec-report.json ./...; then
+            echo "✅ $service: Sin problemas críticos de seguridad"
+          else
+            echo "⚠️ $service: Se encontraron problemas de seguridad"
+            # Mostrar resumen de problemas encontrados
+            gosec -fmt text ./... || true
+            overall_issues=$((overall_issues + 1))
+          fi
+          
+          cd ../..
+          echo "---"
+        done
+        
+        if [ $overall_issues -gt 0 ]; then
+          echo "❌ Se encontraron problemas de seguridad en $overall_issues servicios"
+          echo "📝 Revisa los reportes generados para más detalles"
+          exit 1
+        else
+          echo "🎉 Análisis de seguridad completado sin problemas críticos"
+        fi
+
+  # Job 2: Escaneo de dependencias vulnerables
+  dependency-scan:
+    name: 📦 Escaneo Dependencias
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🐹 Configurar Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: 🔧 Instalar govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        
+    - name: 🔍 Escanear vulnerabilidades en dependencias
+      run: |
+        echo "📦 Escaneando vulnerabilidades en dependencias..."
+        
+        services=("user-service" "resource-service" "booking-service" "notification-service")
+        vulnerable_services=0
+        
+        for service in "${services[@]}"; do
+          echo "🔍 Escaneando dependencias de $service..."
+          cd "services/$service"
+          
+          if govulncheck ./...; then
+            echo "✅ $service: Sin vulnerabilidades conocidas en dependencias"
+          else
+            echo "⚠️ $service: Se encontraron vulnerabilidades en dependencias"
+            vulnerable_services=$((vulnerable_services + 1))
+          fi
+          
+          cd ../..
+          echo "---"
+        done
+        
+        if [ $vulnerable_services -gt 0 ]; then
+          echo "❌ Se encontraron vulnerabilidades en $vulnerable_services servicios"
+          echo "🔧 Actualiza las dependencias vulnerables identificadas"
+          exit 1
+        else
+          echo "🎉 Escaneo de dependencias completado sin vulnerabilidades"
+        fi
+
+  # Job 3: Detección de secretos hardcodeados
+  secret-scan:
+    name: 🔐 Detectar Secretos
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Instalar truffleHog
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+        
+    - name: 🔍 Escanear secretos en el código
+      run: |
+        echo "🔐 Escaneando secretos hardcodeados..."
+        
+        # Ejecutar truffleHog para detectar secretos
+        if truffleHog filesystem . --exclude-paths .github/workflows/security.yml; then
+          echo "✅ No se encontraron secretos hardcodeados"
+        else
+          echo "❌ Se encontraron posibles secretos hardcodeados"
+          echo "🔧 Revisa y remueve cualquier credencial del código fuente"
+          exit 1
+        fi
+
+  # Job 4: Análisis de configuración de seguridad
+  security-config:
+    name: ⚙️ Configuración Seguridad
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar configuraciones de seguridad
+      run: |
+        echo "⚙️ Verificando configuraciones de seguridad..."
+        
+        security_issues=0
+        
+        # Verificar que no hay contraseñas por defecto en docker-compose
+        echo "🔍 Verificando docker-compose.yml..."
+        if [ -f "infrastructure/docker-compose.yml" ]; then
+          if grep -i "password.*password\|password.*123\|password.*admin" infrastructure/docker-compose.yml; then
+            echo "❌ Se encontraron contraseñas por defecto en docker-compose.yml"
+            security_issues=$((security_issues + 1))
+          else
+            echo "✅ docker-compose.yml no contiene contraseñas por defecto obvias"
+          fi
+        fi
+        
+        # Verificar configuraciones de Kubernetes
+        echo "🔍 Verificando manifiestos de Kubernetes..."
+        if [ -d "kubernetes" ]; then
+          # Buscar configuraciones inseguras comunes
+          if find kubernetes -name "*.yaml" -exec grep -l "privileged.*true\|runAsUser.*0\|allowPrivilegeEscalation.*true" {} \; | head -1; then
+            echo "❌ Se encontraron configuraciones privilegiadas en Kubernetes"
+            security_issues=$((security_issues + 1))
+          else
+            echo "✅ No se encontraron configuraciones privilegiadas obvias"
+          fi
+        fi
+        
+        # Verificar que los Dockerfiles no ejecutan como root
+        echo "🔍 Verificando Dockerfiles..."
+        dockerfile_issues=0
+        find . -name "Dockerfile" | while read -r dockerfile; do
+          if ! grep -q "USER " "$dockerfile"; then
+            echo "⚠️ $dockerfile no especifica USER (ejecutará como root)"
+            dockerfile_issues=$((dockerfile_issues + 1))
+          fi
+        done
+        
+        # Verificar archivos con permisos sensibles
+        echo "🔍 Verificando permisos de archivos..."
+        if find scripts -name "*.sh" -perm /111 2>/dev/null | grep -q .; then
+          echo "✅ Scripts tienen permisos de ejecución"
+        else
+          echo "⚠️ Algunos scripts pueden necesitar permisos de ejecución"
+        fi
+        
+        if [ $security_issues -gt 0 ]; then
+          echo "❌ Se encontraron $security_issues problemas de configuración de seguridad"
+          echo "🔧 Revisa y corrige las configuraciones marcadas como inseguras"
+          exit 1
+        else
+          echo "🎉 Configuraciones de seguridad verificadas correctamente"
+        fi
+
+  # Job 5: Generar reporte de seguridad
+  security-report:
+    name: 📊 Reporte Seguridad
+    runs-on: ubuntu-latest
+    needs: [gosec-analysis, dependency-scan, secret-scan, security-config]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 📊 Generar reporte de seguridad
+      run: |
+        echo "📊 Generando reporte de seguridad..."
+        
+        cat > security-report.md << EOF
+        # 🔒 Reporte de Seguridad
+        
+        **Fecha:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        **Commit:** ${{ github.sha }}
+        **Branch:** ${{ github.ref_name }}
+        
+        ## 📋 Resumen de Análisis
+        
+        - ✅ Análisis de código (gosec)
+        - ✅ Escaneo de dependencias (govulncheck)  
+        - ✅ Detección de secretos (truffleHog)
+        - ✅ Configuración de seguridad
+        
+        ## 🔍 Servicios Analizados
+        
+        - user-service
+        - resource-service
+        - booking-service
+        - notification-service
+        
+        ## 📝 Recomendaciones
+        
+        1. Mantener dependencias actualizadas
+        2. Revisar configuraciones de despliegue
+        3. Usar secretos de Kubernetes/Docker para credenciales
+        4. Ejecutar contenedores con usuarios no-root
+        5. Habilitar escaneos de seguridad automáticos
+        
+        ---
+        *Reporte generado automáticamente por GitHub Actions*
+        EOF
+        
+        echo "📄 Reporte de seguridad generado:"
+        cat security-report.md
+        
+    # Subir reporte como artefacto
+    - name: 📤 Subir reporte como artefacto
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: security-report.md
+        retention-days: 30

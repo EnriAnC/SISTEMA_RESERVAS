@@ -1,0 +1,208 @@
+# CI/CD Pipeline Principal para Sistema de Reservas
+# Este workflow valida la compilación, formato y calidad del código Go
+
+name: 🔄 CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# Variables de entorno globales
+env:
+  GO_VERSION: '1.21'
+  GOLANGCI_LINT_VERSION: v1.54
+
+jobs:
+  # Job 1: Verificación de código Go
+  build-and-lint:
+    name: 🏗️ Build & Lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        # Testeamos en múltiples versiones de Go para garantizar compatibilidad
+        go-version: ['1.21', '1.22']
+        service: ['user-service', 'resource-service', 'booking-service', 'notification-service']
+    
+    steps:
+    # Paso 1: Checkout del código
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    # Paso 2: Configurar Go
+    - name: 🐹 Configurar Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        
+    # Paso 3: Cache de dependencias Go para acelerar builds
+    - name: 📦 Cache dependencias Go
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          
+    # Paso 4: Descargar dependencias
+    - name: 📥 Descargar dependencias
+      working-directory: ./services/${{ matrix.service }}
+      run: go mod download
+      
+    # Paso 5: Verificar que go mod tidy no tiene cambios pendientes
+    - name: 🔍 Verificar go mod tidy
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        go mod tidy
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "❌ go mod tidy tiene cambios pendientes"
+          git diff
+          exit 1
+        else
+          echo "✅ go mod está limpio"
+        fi
+        
+    # Paso 6: Verificar formato del código
+    - name: 🎨 Verificar formato Go (gofmt)
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        if [ -n "$(gofmt -l .)" ]; then
+          echo "❌ Código no formateado correctamente:"
+          gofmt -d .
+          exit 1
+        else
+          echo "✅ Código correctamente formateado"
+        fi
+        
+    # Paso 7: Verificar que el código compila
+    - name: 🔨 Compilar servicio
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🏗️ Compilando ${{ matrix.service }}..."
+        go build -v ./...
+        echo "✅ ${{ matrix.service }} compilado exitosamente"
+        
+    # Paso 8: Verificar que no hay errores de go vet
+    - name: 🔍 Análisis estático (go vet)
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🔍 Ejecutando go vet en ${{ matrix.service }}..."
+        go vet ./...
+        echo "✅ go vet pasó sin errores"
+
+  # Job 2: Linting avanzado con golangci-lint
+  advanced-lint:
+    name: 🧹 Linting Avanzado
+    runs-on: ubuntu-latest
+    needs: build-and-lint
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🐹 Configurar Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    # Ejecutar golangci-lint en cada servicio
+    - name: 🧹 golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        working-directory: services/user-service
+        args: --timeout=5m
+        
+    - name: 🧹 golangci-lint (resource-service)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        working-directory: services/resource-service
+        args: --timeout=5m
+        
+    - name: 🧹 golangci-lint (booking-service)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        working-directory: services/booking-service
+        args: --timeout=5m
+        
+    - name: 🧹 golangci-lint (notification-service)
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        working-directory: services/notification-service
+        args: --timeout=5m
+
+  # Job 3: Verificación de estructura del proyecto
+  project-structure:
+    name: 📁 Verificar Estructura
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar estructura de archivos requeridos
+      run: |
+        echo "🔍 Verificando estructura del proyecto..."
+        
+        # Archivos raíz requeridos
+        required_files=(
+          "README.md"
+          "QUICKSTART.md"
+          ".gitignore"
+        )
+        
+        # Directorios requeridos
+        required_dirs=(
+          "services/user-service"
+          "services/resource-service" 
+          "services/booking-service"
+          "services/notification-service"
+          "api-gateway"
+          "kubernetes"
+          "infrastructure"
+          "docs"
+          "scripts"
+        )
+        
+        # Verificar archivos
+        for file in "${required_files[@]}"; do
+          if [ -f "$file" ]; then
+            echo "✅ $file existe"
+          else
+            echo "❌ $file falta"
+            exit 1
+          fi
+        done
+        
+        # Verificar directorios
+        for dir in "${required_dirs[@]}"; do
+          if [ -d "$dir" ]; then
+            echo "✅ $dir/ existe"
+          else
+            echo "❌ $dir/ falta"
+            exit 1
+          fi
+        done
+        
+        # Verificar que cada servicio tiene sus archivos esenciales
+        services=("user-service" "resource-service" "booking-service" "notification-service")
+        for service in "${services[@]}"; do
+          service_files=("go.mod" "main.go" "Dockerfile" "README.md")
+          for file in "${service_files[@]}"; do
+            if [ -f "services/$service/$file" ]; then
+              echo "✅ services/$service/$file existe"
+            else
+              echo "❌ services/$service/$file falta"
+              exit 1
+            fi
+          done
+        done
+        
+        echo "🎉 Estructura del proyecto verificada correctamente"
