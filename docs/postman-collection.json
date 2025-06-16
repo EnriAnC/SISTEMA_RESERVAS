@@ -1,0 +1,481 @@
+{
+  "info": {
+    "name": "Sistema de Reservas API",
+    "description": "API collection for the cloud-based reservation system",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "User Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/health",
+              "host": ["{{base_url}}"],
+              "path": ["users", "health"]
+            }
+          }
+        },
+        {
+          "name": "Resource Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/resources/health",
+              "host": ["{{base_url}}"],
+              "path": ["resources", "health"]
+            }
+          }
+        },
+        {
+          "name": "Booking Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/bookings/health",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "health"]
+            }
+          }
+        },
+        {
+          "name": "Notification Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/health",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/api/v1/users",
+              "host": ["{{base_url}}"],
+              "path": ["users", "api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["users", "api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/api/v1/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated Doe\",\n  \"email\": \"john.updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/api/v1/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resource Management",
+      "item": [
+        {
+          "name": "Create Resource",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Conference Room A\",\n  \"description\": \"Large conference room with video conferencing\",\n  \"type\": \"room\",\n  \"capacity\": 20,\n  \"location\": \"Floor 3, Building A\",\n  \"features\": [\"projector\", \"whiteboard\", \"video_conference\"],\n  \"price_per_hour\": 50.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/resources/api/v1/resources",
+              "host": ["{{base_url}}"],
+              "path": ["resources", "api", "v1", "resources"]
+            }
+          }
+        },
+        {
+          "name": "Get All Resources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/resources/api/v1/resources?limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["resources", "api", "v1", "resources"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Resource by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/resources/api/v1/resources/{{resource_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["resources", "api", "v1", "resources", "{{resource_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Check Resource Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/resources/api/v1/resources/{{resource_id}}/availability?start_time=2024-01-15T10:00:00Z&end_time=2024-01-15T12:00:00Z",
+              "host": ["{{base_url}}"],
+              "path": ["resources", "api", "v1", "resources", "{{resource_id}}", "availability"],
+              "query": [
+                {
+                  "key": "start_time",
+                  "value": "2024-01-15T10:00:00Z"
+                },
+                {
+                  "key": "end_time",
+                  "value": "2024-01-15T12:00:00Z"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking Management",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource_id\": {{resource_id}},\n  \"start_time\": \"2024-01-15T10:00:00Z\",\n  \"end_time\": \"2024-01-15T12:00:00Z\",\n  \"purpose\": \"Team meeting\",\n  \"attendees\": 8\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bookings/api/v1/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "api", "v1", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get User Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/api/v1/bookings?user_id={{user_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "api", "v1", "bookings"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Booking by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "api", "v1", "bookings", "{{booking_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_time\": \"2024-01-15T14:00:00Z\",\n  \"end_time\": \"2024-01-15T16:00:00Z\",\n  \"purpose\": \"Updated team meeting\",\n  \"attendees\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bookings/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "api", "v1", "bookings", "{{booking_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/bookings/api/v1/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "api", "v1", "bookings", "{{booking_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{user_id}},\n  \"type\": \"booking\",\n  \"title\": \"Booking Confirmed\",\n  \"message\": \"Your booking has been confirmed\",\n  \"channel\": \"email\",\n  \"priority\": \"high\",\n  \"metadata\": {\n    \"booking_id\": {{booking_id}},\n    \"resource_name\": \"Conference Room A\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/api/v1/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "api", "v1", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/api/v1/notifications?user_id={{user_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "api", "v1", "notifications"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_read\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/notifications/api/v1/notifications/{{notification_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "api", "v1", "notifications", "{{notification_id}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Notification Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/api/v1/notifications/stats?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "api", "v1", "notifications", "stats"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "description": "Base URL for the API Gateway"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "description": "JWT token obtained from login"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "description": "User ID for testing"
+    },
+    {
+      "key": "resource_id",
+      "value": "1",
+      "description": "Resource ID for testing"
+    },
+    {
+      "key": "booking_id",
+      "value": "1",
+      "description": "Booking ID for testing"
+    },
+    {
+      "key": "notification_id",
+      "value": "1",
+      "description": "Notification ID for testing"
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "version": 3,
+  "name": "Sistema de Reservas API Gateway",
+  "timeout": "3000ms",
+  "cache_ttl": "300s",
+  "output_encoding": "json",
+  "port": 8080,
+  "endpoints": [
+    {
+      "endpoint": "/api/v1/users",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/users",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/users",
+      "method": "POST",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/users",
+          "encoding": "json",
+          "sd": "static",
+          "method": "POST",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/users/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/users/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/users/{id}",
+      "method": "PUT",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/users/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "PUT",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/users/{id}",
+      "method": "DELETE",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/users/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "DELETE",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/auth/login",
+      "method": "POST",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/auth/login",
+          "encoding": "json",
+          "sd": "static",
+          "method": "POST",
+          "host": ["http://user-service:8081"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources",
+      "method": "POST",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources",
+          "encoding": "json",
+          "sd": "static",
+          "method": "POST",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources/{id}",
+      "method": "PUT",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "PUT",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources/{id}",
+      "method": "DELETE",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "DELETE",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/resources/{id}/availability",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/resources/{id}/availability",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://resource-service:8082"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings",
+      "method": "POST",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings",
+          "encoding": "json",
+          "sd": "static",
+          "method": "POST",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings/{id}",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings/{id}",
+      "method": "PUT",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "PUT",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings/{id}",
+      "method": "DELETE",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings/{id}",
+          "encoding": "json",
+          "sd": "static",
+          "method": "DELETE",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/bookings/{id}/cancel",
+      "method": "PUT",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/bookings/{id}/cancel",
+          "encoding": "json",
+          "sd": "static",
+          "method": "PUT",
+          "host": ["http://booking-service:8083"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/notifications",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/notifications",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://notification-service:8084"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/notifications",
+      "method": "POST",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/notifications",
+          "encoding": "json",
+          "sd": "static",
+          "method": "POST",
+          "host": ["http://notification-service:8084"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/notifications/{id}/status",
+      "method": "PUT",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/notifications/{id}/status",
+          "encoding": "json",
+          "sd": "static",
+          "method": "PUT",
+          "host": ["http://notification-service:8084"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v1/notifications/stats",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/notifications/stats",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://notification-service:8084"],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "output_encoding": "json",
+      "backend": [
+        {
+          "url_pattern": "/health",
+          "encoding": "json",
+          "sd": "static",
+          "method": "GET",
+          "host": ["http://user-service:8081", "http://resource-service:8082", "http://booking-service:8083", "http://notification-service:8084"],
+          "disable_host_sanitize": false
+        }
+      ],
+      "extra_config": {
+        "proxy": {
+          "sequential": false
+        }
+      }
+    }
+  ],
+  "extra_config": {
+    "security/cors": {
+      "allow_origins": ["*"],
+      "allow_methods": ["GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"],
+      "allow_headers": ["Origin", "Authorization", "Content-Type", "Accept"],
+      "expose_headers": ["Content-Length"],
+      "max_age": "12h",
+      "allow_credentials": false,
+      "debug": false
+    },
+    "telemetry/logging": {
+      "level": "INFO",
+      "prefix": "[KRAKEND]",
+      "syslog": false,
+      "stdout": true
+    },
+    "telemetry/metrics": {
+      "collection_time": "60s",
+      "proxy_disabled": false,
+      "router_disabled": false,
+      "backend_disabled": false,
+      "endpoint_disabled": false,
+      "listen_address": ":8090"
+    }
+  }
+}

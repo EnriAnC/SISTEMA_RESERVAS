@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reservation-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: reservation-system
+data:
+  POSTGRES_DB: reservations_db
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: password123
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: reservation-system
+data:
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_NAME: reservations_db
+  DB_USER: admin
+  DB_PASSWORD: password123
+  REDIS_HOST: redis-service
+  REDIS_PORT: "6379"
+  JWT_SECRET: your-super-secret-jwt-key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: reservation-system
+type: Opaque
+data:
+  db-password: cGFzc3dvcmQxMjM= # password123 base64 encoded
+  jwt-secret: eW91ci1zdXBlci1zZWNyZXQtand0LWtleQ== # your-super-secret-jwt-key base64 encoded

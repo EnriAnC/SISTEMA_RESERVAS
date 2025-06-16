@@ -1,0 +1,453 @@
+# ============================================================================
+# .gitignore para Sistema de Reservas (Microservicios Go + Docker + Kubernetes)
+# ============================================================================
+
+# ============================================================================
+# Go Language Specific
+# ============================================================================
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.prof
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Go module cache
+go.sum.backup
+
+# ============================================================================
+# Environment and Configuration Files
+# ============================================================================
+
+# Environment files (contains sensitive data)
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+.env.test
+
+# Service-specific environment files
+services/*/.env
+services/*/.env.*
+
+# Configuration files with secrets
+config.yaml
+config.json
+secrets.yaml
+secrets.json
+
+# Kubernetes secrets (if any accidentally added)
+*-secret.yaml
+*-secret.yml
+
+# ============================================================================
+# Logs and Output Files
+# ============================================================================
+
+# Log files
+*.log
+logs/
+log/
+
+# Application logs
+app.log
+error.log
+access.log
+debug.log
+
+# Service-specific logs
+services/*/logs/
+services/*/*.log
+
+# Container logs
+docker-compose.override.yml.logs
+
+# ============================================================================
+# Database Files
+# ============================================================================
+
+# Database files (SQLite, if used for testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.sql.gz
+*.dump
+backup.sql
+database-backup-*
+
+# PostgreSQL data
+pgdata/
+postgres-data/
+
+# Database migration files (temporary)
+*.up.sql.tmp
+*.down.sql.tmp
+
+# ============================================================================
+# Docker and Container Files
+# ============================================================================
+
+# Docker override files (may contain local configurations)
+docker-compose.override.yml
+docker-compose.prod.yml
+docker-compose.staging.yml
+
+# Docker build context ignores
+.dockerignore.local
+
+# Docker volumes data
+docker-volumes/
+data/
+
+# Container runtime files
+.pid
+
+# ============================================================================
+# Kubernetes and Orchestration
+# ============================================================================
+
+# Kubernetes local configurations
+kubeconfig
+kubeconfig.yaml
+kubeconfig.yml
+.kubeconfig
+
+# Helm charts dependencies
+charts/*/charts/
+charts/*/Chart.lock
+
+# Kubectl temporary files
+kubectl-edit-*.yaml
+
+# Kubernetes secrets and sensitive configs
+k8s-secrets/
+kubernetes-secrets/
+
+# Local Kubernetes manifests with secrets
+*-local.yaml
+*-local.yml
+
+# ============================================================================
+# Monitoring and Observability
+# ============================================================================
+
+# Prometheus data
+prometheus-data/
+prometheus/data/
+
+# Grafana data
+grafana-data/
+grafana/data/
+
+# Metrics and monitoring outputs
+metrics/
+monitoring-data/
+
+# Jaeger traces
+jaeger-data/
+
+# ============================================================================
+# Cache and Temporary Files
+# ============================================================================
+
+# Redis dump files
+dump.rdb
+appendonly.aof
+
+# Cache directories
+cache/
+tmp/
+temp/
+
+# Application cache
+*.cache
+.cache/
+
+# Build cache
+.build-cache/
+
+# ============================================================================
+# IDE and Editor Files
+# ============================================================================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA / GoLand
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*~
+.*.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# Operating System Files
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================================================
+# Security and Certificates
+# ============================================================================
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.pub
+
+# GPG keys
+*.gpg
+*.asc
+
+# API keys and tokens
+*api-key*
+*token*
+*secret*
+credentials.json
+
+# ============================================================================
+# Testing and Coverage
+# ============================================================================
+
+# Test results
+test-results/
+coverage/
+coverage.html
+coverage.xml
+coverage.txt
+
+# Integration test artifacts
+integration-test-data/
+test-data/
+
+# Performance test results
+performance-results/
+load-test-results/
+
+# ============================================================================
+# Build and Deployment Artifacts
+# ============================================================================
+
+# Build directories
+build/
+dist/
+out/
+
+# Compiled binaries (service executables)
+services/*/user-service
+services/*/resource-service
+services/*/booking-service
+services/*/notification-service
+
+# Docker build artifacts
+.docker-build/
+
+# Deployment artifacts
+deployment-*.yaml
+deployment-*.yml
+
+# Terraform files (if used for infrastructure)
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+# ============================================================================
+# Package Managers and Dependencies
+# ============================================================================
+
+# Node.js (if any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.backup
+
+# Python (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# ============================================================================
+# Development and Local Files
+# ============================================================================
+
+# Local development overrides
+local/
+local-*
+
+# Developer notes and todos
+TODO.md
+NOTES.md
+dev-notes/
+
+# Local scripts and utilities
+local-scripts/
+dev-tools/
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# ============================================================================
+# Performance and Profiling
+# ============================================================================
+
+# Go profiling files
+cpu.prof
+mem.prof
+block.prof
+mutex.prof
+
+# Performance test outputs
+bench.out
+benchmark-results/
+
+# ============================================================================
+# External Services Mock Data
+# ============================================================================
+
+# Mock service data
+mock-data/
+fixtures/
+test-fixtures/
+
+# External service configurations
+external-services/
+third-party-configs/
+
+# ============================================================================
+# Documentation Build Artifacts
+# ============================================================================
+
+# Swagger/OpenAPI generated files
+swagger-ui/
+api-docs/generated/
+
+# Documentation build outputs
+docs/build/
+docs/dist/
+
+# ============================================================================
+# Cloud Provider Specific
+# ============================================================================
+
+# AWS
+.aws/
+aws-config/
+
+# Google Cloud
+.gcloud/
+gcloud-config/
+
+# Azure
+.azure/
+azure-config/
+
+# ============================================================================
+# Miscellaneous
+# ============================================================================
+
+# Archive files
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# Temporary network files
+.netrwhist
+
+# Editor temporary files
+.#*
+
+# macOS Finder files
+.fseventsd/
+.Spotlight-V100/
+.TemporaryItems/
+.Trashes/
+
+# JetBrains IDEs
+atlassian-ide-plugin.xml
+
+# End of .gitignore
