@@ -139,7 +139,7 @@ func (s *ResourceService) GetAvailability(resourceID int, startDate, endDate tim
 	var availability []ResourceAvailability
 
 	// Generate availability for each day in the range
-	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
+	for date := startDate; date.Before(endDate) || date.Equal(endDate); date = date.AddDate(0, 0, 1) {
 		dayOfWeek := int(date.Weekday())
 
 		// Find slots for this day of week
