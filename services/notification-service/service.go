@@ -45,10 +45,10 @@ func (s *NotificationService) SendNotification(req NotificationRequest) (*Notifi
 
 	// Set default values
 	if notification.Channel == "" {
-		notification.Channel = "email"
+		notification.Channel = ChannelEmail
 	}
 	if notification.Priority == "" {
-		notification.Priority = "normal"
+		notification.Priority = PriorityNormal
 	}
 
 	// Save notification
@@ -60,12 +60,18 @@ func (s *NotificationService) SendNotification(req NotificationRequest) (*Notifi
 	if err := s.sendToChannel(notification); err != nil {
 		log.Printf("Failed to send notification via %s: %v", notification.Channel, err)
 		// Mark as failed but don't return error - notification is still stored
-		notification.Status = "failed"
-		s.repo.Update(notification)
+		notification.Status = StatusFailed
+		if updateErr := s.repo.Update(notification); updateErr != nil {
+			log.Printf("Failed to update notification status: %v", updateErr)
+			return nil, fmt.Errorf("failed to update notification status: %w", updateErr)
+		}
 	} else {
-		notification.Status = "sent"
+		notification.Status = StatusSent
 		notification.SentAt = &notification.CreatedAt
-		s.repo.Update(notification)
+		if updateErr := s.repo.Update(notification); updateErr != nil {
+			log.Printf("Failed to update notification status: %v", updateErr)
+			return nil, fmt.Errorf("failed to update notification status: %w", updateErr)
+		}
 	}
 
 	return notification, nil
@@ -115,18 +121,18 @@ func (s *NotificationService) GetNotificationStats(userID int) (*NotificationSta
 		}
 
 		switch notification.Priority {
-		case "high":
+		case PriorityHigh:
 			stats.High++
-		case "normal":
+		case PriorityNormal:
 			stats.Normal++
-		case "low":
+		case PriorityLow:
 			stats.Low++
 		}
 
 		switch notification.Status {
-		case "sent":
+		case StatusSent:
 			stats.Sent++
-		case "failed":
+		case StatusFailed:
 			stats.Failed++
 		default:
 			stats.Pending++
@@ -138,11 +144,11 @@ func (s *NotificationService) GetNotificationStats(userID int) (*NotificationSta
 
 // sendToChannel simulates sending notification via different channels
 func (s *NotificationService) sendToChannel(notification *Notification) error {
-	log.Printf("Sending notification %d via %s to user %d", 
+	log.Printf("Sending notification %d via %s to user %d",
 		notification.ID, notification.Channel, notification.UserID)
 
 	switch notification.Channel {
-	case "email":
+	case ChannelEmail:
 		return s.sendEmail(notification)
 	case "sms":
 		return s.sendSMS(notification)
@@ -157,9 +163,9 @@ func (s *NotificationService) sendToChannel(notification *Notification) error {
 
 // sendEmail simulates email sending
 func (s *NotificationService) sendEmail(notification *Notification) error {
-	log.Printf("[EMAIL] To User %d: %s - %s", 
+	log.Printf("[EMAIL] To User %d: %s - %s",
 		notification.UserID, notification.Title, notification.Message)
-	
+
 	// TODO: Integrate with email service (SendGrid, AWS SES, etc.)
 	// For now, just simulate success
 	time.Sleep(100 * time.Millisecond) // Simulate network delay
@@ -168,9 +174,9 @@ func (s *NotificationService) sendEmail(notification *Notification) error {
 
 // sendSMS simulates SMS sending
 func (s *NotificationService) sendSMS(notification *Notification) error {
-	log.Printf("[SMS] To User %d: %s", 
+	log.Printf("[SMS] To User %d: %s",
 		notification.UserID, notification.Message)
-	
+
 	// TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
 	time.Sleep(200 * time.Millisecond) // Simulate network delay
 	return nil
@@ -178,9 +184,9 @@ func (s *NotificationService) sendSMS(notification *Notification) error {
 
 // sendPushNotification simulates push notification sending
 func (s *NotificationService) sendPushNotification(notification *Notification) error {
-	log.Printf("[PUSH] To User %d: %s - %s", 
+	log.Printf("[PUSH] To User %d: %s - %s",
 		notification.UserID, notification.Title, notification.Message)
-	
+
 	// TODO: Integrate with push service (Firebase FCM, Apple APNS, etc.)
 	time.Sleep(150 * time.Millisecond) // Simulate network delay
 	return nil
@@ -188,9 +194,9 @@ func (s *NotificationService) sendPushNotification(notification *Notification) e
 
 // sendWebhook simulates webhook sending
 func (s *NotificationService) sendWebhook(notification *Notification) error {
-	log.Printf("[WEBHOOK] To User %d: %s", 
+	log.Printf("[WEBHOOK] To User %d: %s",
 		notification.UserID, notification.Message)
-	
+
 	// TODO: Send HTTP POST to configured webhook URL
 	payload := map[string]interface{}{
 		"user_id":  notification.UserID,
@@ -199,10 +205,10 @@ func (s *NotificationService) sendWebhook(notification *Notification) error {
 		"message":  notification.Message,
 		"metadata": notification.Metadata,
 	}
-	
+
 	payloadJSON, _ := json.Marshal(payload)
 	log.Printf("[WEBHOOK] Payload: %s", string(payloadJSON))
-	
+
 	time.Sleep(300 * time.Millisecond) // Simulate network delay
 	return nil
 }
@@ -230,26 +236,26 @@ func (s *NotificationService) ProcessEvents(event map[string]interface{}) error 
 		req.Type = "booking"
 		req.Title = "Booking Confirmed"
 		req.Message = "Your booking has been confirmed successfully"
-		req.Priority = "high"
-		req.Channel = "email"
-	case "booking_cancelled":
+		req.Priority = PriorityHigh
+		req.Channel = ChannelEmail
+	case "booking_canceled":
 		req.Type = "booking"
-		req.Title = "Booking Cancelled"
-		req.Message = "Your booking has been cancelled"
-		req.Priority = "high"
-		req.Channel = "email"
+		req.Title = "Booking Canceled"
+		req.Message = "Your booking has been canceled"
+		req.Priority = PriorityHigh
+		req.Channel = ChannelEmail
 	case "booking_reminder":
 		req.Type = "reminder"
 		req.Title = "Booking Reminder"
 		req.Message = "Your booking is starting soon"
-		req.Priority = "normal"
+		req.Priority = PriorityNormal
 		req.Channel = "push"
 	case "user_registered":
 		req.Type = "welcome"
 		req.Title = "Welcome!"
 		req.Message = "Welcome to our reservation system"
-		req.Priority = "normal"
-		req.Channel = "email"
+		req.Priority = PriorityNormal
+		req.Channel = ChannelEmail
 	default:
 		return fmt.Errorf("unknown event type: %s", eventType)
 	}

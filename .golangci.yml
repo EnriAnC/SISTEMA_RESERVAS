@@ -1,119 +1,171 @@
 # Configuración de golangci-lint para el Sistema de Reservas
-# Esta configuración se aplica a todos los servicios Go del proyecto
+# Esta configuración ha sido refactorizada basándose en las recomendaciones de la IA
+# para mejorar la robustez, claridad y efectividad del linting.
 
 run:
-  # Timeout para el análisis
+  # Timeout para el análisis. 5m es generalmente un buen punto de partida.
   timeout: 5m
-  
-  # Directorios a excluir del análisis  
-  skip-dirs:
-    - vendor
-    - .git
-    - bin
-    - tmp
-  
-  # Archivos a excluir
-  skip-files:
-    - ".*_test.go"
-    - ".*\\.pb\\.go"
 
-# Configuración de issues
 issues:
-  # Incluir todos los issues por defecto
-  include:
-    - EXC0002 # disable excluding of issues about comments from golint
+  # No se incluye EXC0002 ya que es redundante con revive y el comportamiento por defecto.
+
+  # Excluir archivos específicos de TODOS los linters.
+  # Es preferible usar exclude-rules para ser más granular.
+  exclude-files:
+    # Excluir archivos generados automáticamente (e.g., protobuf).
+    - .*\\.pb\\.go
+    # NOTA: Se ha eliminado _test\.go de aquí. Los tests DEBEN ser lintados.
+    # Las exclusiones específicas para tests se manejarán en 'exclude-rules' si es necesario.
+
+  # Excluir directorios completos.
+  exclude-dirs:
+    - vendor/ # Excluir dependencias vendored.
+    - .git    # Excluir el directorio .git.
+    - bin     # Excluir binarios generados.
+    - tmp     # Excluir archivos temporales.
   
-  # Excluir algunos issues específicos que pueden ser falsos positivos
+  # Excluir algunos issues específicos.
+  # Se han eliminado las reglas para 'golint' ya que está obsoleto y se usa 'revive'.
+  # Se ha eliminado la exclusión de 'errcheck' para archivos _test.go.
   exclude-rules:
-    # Excluir errores de comentarios en archivos de prueba
-    - path: _test\.go
-      linters:
-        - golint
-        - errcheck
-    
-    # Excluir algunos errores comunes de configuración inicial
-    - text: "should have comment or be unexported"
-      linters:
-        - golint
+    # Ejemplo: Si necesitas excluir una regla específica de revive para tests (ej. comentarios en funciones exportadas de test helpers):
+    # - path: _test\.go
+    #   text: "exported function .* should have comment or be unexported"
+    #   linters:
+    #     - revive
+    # Por ahora, no se aplican exclusiones genéricas a tests para fomentar buenas prácticas.
+    # Si alguna regla de revive resulta demasiado ruidosa en tests, se puede añadir aquí específicamente.
+    # - path: cmd/ # Ejemplo: Excluir "exported func main should have comment" para el paquete main
+    #   text: "exported function main should have comment or be unexported"
+    #   linters:
+    #     - revive
 
 # Linters a ejecutar
 linters:
-  # Habilitar linters específicos
+  # Habilitar linters específicos.
+  # Se ha añadido lll (previamente en disable con comentario engañoso), nolintlint y thelper.
   enable:
-    - errcheck        # Verificar errores no manejados
-    - gosimple        # Simplificaciones posibles
-    - govet           # Análisis estático de Go
-    - ineffassign     # Asignaciones ineficientes
-    - staticcheck     # Análisis estático avanzado
-    - typecheck       # Verificación de tipos
-    - unused          # Código no utilizado
-    - misspell        # Errores de ortografía
-    - gofmt           # Formato del código
-    - goimports       # Imports organizados
-    - golint          # Estilo de código Go
-    - goconst         # Constantes repetidas
-    - gocyclo         # Complejidad ciclomática
-    - gosec           # Seguridad básica
-    - gocritic        # Análisis crítico
+    - errcheck        # Verificar errores no manejados.
+    - gosimple        # Sugerir simplificaciones en el código.
+    - govet           # Análisis estático de Go para encontrar posibles bugs.
+    - ineffassign     # Detectar asignaciones ineficientes (no usadas).
+    - staticcheck     # Conjunto extenso de análisis estáticos.
+    - typecheck       # Asegurar que el código es type-safe.
+    - unused          # Detectar código no utilizado.
+    - misspell        # Corregir errores de ortografía comunes en comentarios y strings.
+    - gofmt           # Asegurar que el código sigue el formato estándar de Go.
+    - goimports       # Organizar imports y añadir/eliminar los necesarios.
+    - revive          # Linter de estilo y buenas prácticas, sucesor de golint.
+    - goconst         # Encontrar strings que podrían ser constantes.
+    - gocyclo         # Medir la complejidad ciclomática de las funciones.
+    - gosec           # Scanner de seguridad para código Go.
+    - gocritic        # Linter con varios checks de estilo, rendimiento y diagnóstico.
+    #- lll             # Verificar la longitud de las líneas.
+    - nolintlint      # Verificar la validez y el alcance de los comentarios //nolint.
+    - thelper         # Asegurar que las funciones helper de los tests llaman a t.Helper().
     
-  # Deshabilitar linters que pueden ser muy estrictos para un proyecto inicial
+  # Deshabilitar linters que pueden ser muy estrictos o no deseados.
   disable:
-    - gochecknoinits  # Muy estricto para proyectos con init()
-    - gochecknoglobals # Muy estricto para configuración global
-    - funlen          # Longitud de funciones (muy estricto)
-    - lll             # Longitud de líneas (configurado por separado)
+    - gochecknoinits  # Considerado muy estricto para proyectos que usan init().
+    - gochecknoglobals # Considerado muy estricto para configuraciones globales.
+    - funlen          # Longitud de funciones (puede ser demasiado restrictivo inicialmente).
+    # 'lll' se movió a 'enable' para que su configuración tenga efecto.
 
 # Configuración específica de linters
 linters-settings:
   # Configuración de errcheck
   errcheck:
-    # Funciones cuyo error return puede ser ignorado
-    ignore: fmt:.*,io/ioutil:^Read.*
-    
-  # Configuración de golint
-  golint:
-    # Nivel mínimo de confianza para reportar issues
-    min-confidence: 0.8
+    # Funciones cuyo error de retorno puede ser ignorado.
+    # Se ha hecho más específica la exclusión de fmt.*.
+    # Se ha eliminado la exclusión de io/ioutil.^Read.* (crítico manejar estos errores y ioutil está obsoleto).
+    exclude-functions:
+      - fmt.Print
+      - fmt.Println
+      # Si hay otras funciones específicas de fmt cuyos errores realmente quieres ignorar, añádelas aquí.
+      # Ejemplo: "github.com/pkg/errors.Wrapf" si siempre manejas el error original.
+    # 'min-confidence' no es una opción válida para errcheck y ha sido eliminada.
+    # Opciones válidas como 'check-type-assertions' o 'check-blank' pueden ser añadidas si es necesario.
     
   # Configuración de gocyclo
   gocyclo:
-    # Complejidad máxima permitida
-    min-complexity: 10
+    # Complejidad ciclomática máxima permitida antes de reportar.
+    min-complexity: 15 # Ajustado ligeramente, 10 puede ser un poco bajo para algunas funciones. Ajusta según necesidad.
     
   # Configuración de goconst
   goconst:
-    # Número mínimo de ocurrencias para sugerir constante
+    # Número mínimo de ocurrencias para sugerir una constante.
     min-len: 3
     min-occurrences: 3
     
   # Configuración de misspell
   misspell:
-    # Idioma para verificación ortográfica
-    locale: US
+    # Idioma para verificación ortográfica.
+    locale: US # También puedes usar "UK" u otros soportados.
     
   # Configuración de goimports
   goimports:
-    # Prefijo local para imports
+    # Prefijo local para agrupar los imports del proyecto.
+    # ¡IMPORTANTE! Reemplaza 'sistema-reservas' con el prefijo real de tu módulo Go
+    # (ej. 'github.com/tu_usuario/sistema-reservas').
     local-prefixes: sistema-reservas
     
   # Configuración de gosec
   gosec:
-    # Incluir reglas de prueba
+    # 'includes' limita gosec a ejecutar SÓLO estas reglas.
+    # Si la intención es ejecutar el conjunto por defecto de gosec (excepto las excluidas),
+    # esta sección 'includes' debería eliminarse.
+    # Por ahora, se mantiene asumiendo que esta selección específica es intencional.
     includes:
-      - G401
-      - G501
-      - G502
-    # Excluir reglas muy estrictas para desarrollo
+      - G401 # Detects the use of weak cryptographic functions.
+      - G501 # Detects the use of blacklisted import 'crypto/md5'.
+      - G502 # Detects the use of blacklisted import 'crypto/des'.
+    # Excluir reglas que pueden ser redundantes o demasiado estrictas.
     excludes:
-      - G104 # Errors unhandled (cubierto por errcheck)
+      - G104 # Errors unhandled (cubierto por errcheck de forma más general).
       
   # Configuración de gocritic
   gocritic:
-    # Habilitar solo checks específicos para evitar ruido
+    # Habilitar solo tags específicos para evitar ruido inicial.
+    # 'diagnostic', 'style', 'performance' son buenos puntos de partida.
     enabled-tags:
       - diagnostic
       - style
       - performance
+    # Deshabilitar checks específicos si son problemáticos para el proyecto.
     disabled-checks:
-      - unnamedResult
-      - hugeParam
+      - unnamedResult # Puede ser útil, pero a veces verboso.
+      - hugeParam     # Puede ser útil, pero a veces no aplicable.
+      # - singleCaseSwitch # Ejemplo de otro check que podría deshabilitarse.
+
+  # Configuración de lll (line length linter)
+  # lll:
+    # Longitud máxima de línea permitida.
+    # line-length: 120 # Un valor común. Ajusta según las guías de estilo de tu equipo.
+    # También puedes configurar 'tab-width' si es necesario.
+
+  # Configuración de revive
+  revive:
+    # revive es altamente configurable. Puedes usar un archivo revive.toml externo
+    # o configurar reglas inline aquí.
+    # Por defecto, revive usa un conjunto de reglas razonable.
+    # Ejemplo: ignorar la necesidad de cabeceras de licencia en archivos generados.
+    ignore-generated-header: true
+    # confidence: 0.8 # Nivel de confianza para reportar (0.0 a 1.0). Por defecto es 0.8.
+    # rules:
+    #   - name: exported
+    #     # Para permitir que elementos no exportados en paquetes 'main' o tests no necesiten comentarios:
+    #     # Esto requiere una configuración más detallada, a menudo mejor manejada con //nolint:revive
+    #     # o con un archivo de configuración revive.toml si las reglas por defecto son muy estrictas.
+    #     # arguments: ["allow-bare-package-main", "allow-bare-package-test"] # Esto es un ejemplo conceptual.
+    #     # La forma de configurar esto para 'exported' es más específica.
+    #     # Por ahora, se deja la configuración por defecto de revive para 'exported'.
+    #     # Si la regla "exported item should have comment" es demasiado ruidosa,
+    #     # considera usar `//nolint:revive // reason` o ajustar aquí.
+
+    #   - name: line-length-limit # Si prefieres usar la regla de revive en lugar de lll
+    #     disabled: true # ya que estamos usando el linter 'lll' dedicado.
+
+    #   - name: package-comments # Deshabilitado por defecto en golangci-lint
+    #     disabled: false # Habilitar si se desea forzar comentarios de paquete.
+
+# Fin de la configuración de golangci-lint

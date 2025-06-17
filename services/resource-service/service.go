@@ -28,11 +28,11 @@ func (s *ResourceService) Create(req CreateResourceRequest) (*Resource, error) {
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	
+
 	if err := s.repository.Create(&resource); err != nil {
 		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
-	
+
 	return &resource, nil
 }
 
@@ -42,7 +42,7 @@ func (s *ResourceService) GetByID(id int) (*Resource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	return resource, nil
 }
 
@@ -55,14 +55,14 @@ func (s *ResourceService) List(query ListResourcesQuery) ([]*Resource, error) {
 	if query.Size <= 0 {
 		query.Size = 20
 	}
-	
+
 	offset := (query.Page - 1) * query.Size
-	
+
 	resources, err := s.repository.List(query, query.Size, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list resources: %w", err)
 	}
-	
+
 	return resources, nil
 }
 
@@ -72,7 +72,7 @@ func (s *ResourceService) Update(id int, req UpdateResourceRequest) (*Resource, 
 	if err != nil {
 		return nil, fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	// Update fields if provided
 	if req.Name != nil {
 		resource.Name = *req.Name
@@ -95,13 +95,13 @@ func (s *ResourceService) Update(id int, req UpdateResourceRequest) (*Resource, 
 	if req.IsActive != nil {
 		resource.IsActive = *req.IsActive
 	}
-	
+
 	resource.UpdatedAt = time.Now()
-	
+
 	if err := s.repository.Update(resource); err != nil {
 		return nil, fmt.Errorf("failed to update resource: %w", err)
 	}
-	
+
 	return resource, nil
 }
 
@@ -111,14 +111,14 @@ func (s *ResourceService) Delete(id int) error {
 	if err != nil {
 		return fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	resource.IsActive = false
 	resource.UpdatedAt = time.Now()
-	
+
 	if err := s.repository.Update(resource); err != nil {
 		return fmt.Errorf("failed to delete resource: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -129,44 +129,46 @@ func (s *ResourceService) GetAvailability(resourceID int, startDate, endDate tim
 	if err != nil {
 		return nil, fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	// Get availability slots for the resource
 	slots, err := s.repository.GetAvailabilitySlots(resourceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get availability slots: %w", err)
 	}
-	
+
 	var availability []ResourceAvailability
-	
+
 	// Generate availability for each day in the range
 	for date := startDate; !date.After(endDate); date = date.AddDate(0, 0, 1) {
 		dayOfWeek := int(date.Weekday())
-		
+
 		// Find slots for this day of week
 		for _, slot := range slots {
-			if slot.DayOfWeek == dayOfWeek && slot.IsActive {
-				// Parse time slots
-				startTime, _ := time.Parse("15:04", slot.StartTime)
-				endTime, _ := time.Parse("15:04", slot.EndTime)
-				
-				// Combine date with time
-				fullStartTime := time.Date(date.Year(), date.Month(), date.Day(),
-					startTime.Hour(), startTime.Minute(), 0, 0, date.Location())
-				fullEndTime := time.Date(date.Year(), date.Month(), date.Day(),
-					endTime.Hour(), endTime.Minute(), 0, 0, date.Location())
-				
-				availability = append(availability, ResourceAvailability{
-					ResourceID: resourceID,
-					Date:       date,
-					StartTime:  fullStartTime,
-					EndTime:    fullEndTime,
-					IsBooked:   false, // TODO: Check against bookings
-					BookingID:  nil,
-				})
+			if slot.DayOfWeek != dayOfWeek || !slot.IsActive {
+				continue
 			}
+
+			// Parse time slots
+			startTime, _ := time.Parse("15:04", slot.StartTime)
+			endTime, _ := time.Parse("15:04", slot.EndTime)
+
+			// Combine date with time
+			fullStartTime := time.Date(date.Year(), date.Month(), date.Day(),
+				startTime.Hour(), startTime.Minute(), 0, 0, date.Location())
+			fullEndTime := time.Date(date.Year(), date.Month(), date.Day(),
+				endTime.Hour(), endTime.Minute(), 0, 0, date.Location())
+
+			availability = append(availability, ResourceAvailability{
+				ResourceID: resourceID,
+				Date:       date,
+				StartTime:  fullStartTime,
+				EndTime:    fullEndTime,
+				IsBooked:   false, // TODO: Check against bookings
+				BookingID:  nil,
+			})
 		}
 	}
-	
+
 	return availability, nil
 }
 
@@ -177,12 +179,12 @@ func (s *ResourceService) UpdateAvailability(resourceID int, slots []CreateAvail
 	if err != nil {
 		return fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	// Clear existing slots
 	if err := s.repository.ClearAvailabilitySlots(resourceID); err != nil {
 		return fmt.Errorf("failed to clear existing slots: %w", err)
 	}
-	
+
 	// Add new slots
 	for _, slotReq := range slots {
 		slot := AvailabilitySlot{
@@ -193,12 +195,12 @@ func (s *ResourceService) UpdateAvailability(resourceID int, slots []CreateAvail
 			IsActive:   true,
 			CreatedAt:  time.Now(),
 		}
-		
+
 		if err := s.repository.CreateAvailabilitySlot(&slot); err != nil {
 			return fmt.Errorf("failed to create availability slot: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -209,14 +211,14 @@ func (s *ResourceService) CheckAvailability(resourceID int, startTime, endTime t
 	if err != nil {
 		return false, fmt.Errorf("resource not found: %w", err)
 	}
-	
+
 	// Get availability for the date
 	date := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, startTime.Location())
 	availability, err := s.GetAvailability(resourceID, date, date)
 	if err != nil {
 		return false, err
 	}
-	
+
 	// Check if any availability slot covers the requested time
 	for _, slot := range availability {
 		if !slot.IsBooked &&
@@ -225,6 +227,6 @@ func (s *ResourceService) CheckAvailability(resourceID int, startTime, endTime t
 			return true, nil
 		}
 	}
-	
+
 	return false, nil
 }

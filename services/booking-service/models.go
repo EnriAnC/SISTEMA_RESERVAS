@@ -10,22 +10,22 @@ type BookingStatus string
 const (
 	BookingStatusPending   BookingStatus = "PENDING"
 	BookingStatusConfirmed BookingStatus = "CONFIRMED"
-	BookingStatusCancelled BookingStatus = "CANCELLED"
+	BookingStatusCanceled  BookingStatus = "CANCELED"
 	BookingStatusCompleted BookingStatus = "COMPLETED"
 )
 
 // Booking represents a reservation
 type Booking struct {
-	ID          int           `json:"id" db:"id"`
-	UserID      int           `json:"user_id" db:"user_id"`
-	ResourceID  int           `json:"resource_id" db:"resource_id"`
-	StartTime   time.Time     `json:"start_time" db:"start_time"`
-	EndTime     time.Time     `json:"end_time" db:"end_time"`
-	Status      BookingStatus `json:"status" db:"status"`
-	Notes       string        `json:"notes" db:"notes"`
-	CreatedAt   time.Time     `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at" db:"updated_at"`
-	CancelledAt *time.Time    `json:"cancelled_at,omitempty" db:"cancelled_at"`
+	ID         int           `json:"id" db:"id"`
+	UserID     int           `json:"user_id" db:"user_id"`
+	ResourceID int           `json:"resource_id" db:"resource_id"`
+	StartTime  time.Time     `json:"start_time" db:"start_time"`
+	EndTime    time.Time     `json:"end_time" db:"end_time"`
+	Status     BookingStatus `json:"status" db:"status"`
+	Notes      string        `json:"notes" db:"notes"`
+	CreatedAt  time.Time     `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time     `json:"updated_at" db:"updated_at"`
+	CanceledAt *time.Time    `json:"canceled_at,omitempty" db:"canceled_at"`
 }
 
 // BookingWithDetails represents a booking with user and resource details
@@ -87,7 +87,7 @@ const (
 	BookingEventCreated   BookingEventType = "booking.created"
 	BookingEventUpdated   BookingEventType = "booking.updated"
 	BookingEventConfirmed BookingEventType = "booking.confirmed"
-	BookingEventCancelled BookingEventType = "booking.cancelled"
+	BookingEventCanceled  BookingEventType = "booking.canceled"
 )
 
 // AvailabilityCheckRequest represents a request to check availability
@@ -99,18 +99,18 @@ type AvailabilityCheckRequest struct {
 
 // AvailabilityCheckResponse represents the response of availability check
 type AvailabilityCheckResponse struct {
-	Available bool               `json:"available"`
-	Conflicts []BookingConflict  `json:"conflicts,omitempty"`
+	Available bool              `json:"available"`
+	Conflicts []BookingConflict `json:"conflicts,omitempty"`
 }
 
 // IsValidTransition checks if a status transition is valid
 func (b *Booking) IsValidTransition(newStatus BookingStatus) bool {
 	switch b.Status {
 	case BookingStatusPending:
-		return newStatus == BookingStatusConfirmed || newStatus == BookingStatusCancelled
+		return newStatus == BookingStatusConfirmed || newStatus == BookingStatusCanceled
 	case BookingStatusConfirmed:
-		return newStatus == BookingStatusCancelled || newStatus == BookingStatusCompleted
-	case BookingStatusCancelled, BookingStatusCompleted:
+		return newStatus == BookingStatusCanceled || newStatus == BookingStatusCompleted
+	case BookingStatusCanceled, BookingStatusCompleted:
 		return false // Terminal states
 	default:
 		return false

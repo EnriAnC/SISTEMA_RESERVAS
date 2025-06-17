@@ -21,11 +21,11 @@ type ResourceRepository interface {
 // InMemoryResourceRepository is a simple in-memory implementation
 // TODO: Replace with actual database implementation (PostgreSQL)
 type InMemoryResourceRepository struct {
-	resources   map[int]*Resource
-	slots       map[int]*AvailabilitySlot
-	nextResID   int
-	nextSlotID  int
-	mutex       sync.RWMutex
+	resources  map[int]*Resource
+	slots      map[int]*AvailabilitySlot
+	nextResID  int
+	nextSlotID int
+	mutex      sync.RWMutex
 }
 
 func NewResourceRepository() ResourceRepository {
@@ -40,10 +40,10 @@ func NewResourceRepository() ResourceRepository {
 func (r *InMemoryResourceRepository) Create(resource *Resource) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	resource.ID = r.nextResID
 	r.nextResID++
-	
+
 	r.resources[resource.ID] = resource
 	return nil
 }
@@ -51,27 +51,27 @@ func (r *InMemoryResourceRepository) Create(resource *Resource) error {
 func (r *InMemoryResourceRepository) GetByID(id int) (*Resource, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
-	
+
 	resource, exists := r.resources[id]
 	if !exists {
 		return nil, fmt.Errorf("resource with ID %d not found", id)
 	}
-	
+
 	if !resource.IsActive {
 		return nil, fmt.Errorf("resource with ID %d is inactive", id)
 	}
-	
+
 	return resource, nil
 }
 
 func (r *InMemoryResourceRepository) Update(resource *Resource) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	if _, exists := r.resources[resource.ID]; !exists {
 		return fmt.Errorf("resource with ID %d not found", resource.ID)
 	}
-	
+
 	r.resources[resource.ID] = resource
 	return nil
 }
@@ -79,12 +79,12 @@ func (r *InMemoryResourceRepository) Update(resource *Resource) error {
 func (r *InMemoryResourceRepository) Delete(id int) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	resource, exists := r.resources[id]
 	if !exists {
 		return fmt.Errorf("resource with ID %d not found", id)
 	}
-	
+
 	resource.IsActive = false
 	return nil
 }
@@ -92,66 +92,77 @@ func (r *InMemoryResourceRepository) Delete(id int) error {
 func (r *InMemoryResourceRepository) List(query ListResourcesQuery, limit, offset int) ([]*Resource, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
-	
+
 	var filtered []*Resource
-	
+
 	// Filter resources
 	for _, resource := range r.resources {
-		if !resource.IsActive {
-			continue
+		if r.shouldIncludeResource(resource, query) {
+			filtered = append(filtered, resource)
 		}
-		
-		// Apply filters
-		if query.Type != "" && !strings.EqualFold(resource.Type, query.Type) {
-			continue
-		}
-		
-		if query.Location != "" && !strings.Contains(strings.ToLower(resource.Location), strings.ToLower(query.Location)) {
-			continue
-		}
-		
-		if query.Capacity > 0 && resource.Capacity < query.Capacity {
-			continue
-		}
-		
-		filtered = append(filtered, resource)
 	}
-	
+
 	// Apply pagination
+	return r.applyPagination(filtered, limit, offset), nil
+}
+
+// shouldIncludeResource checks if a resource matches the query filters
+func (r *InMemoryResourceRepository) shouldIncludeResource(resource *Resource, query ListResourcesQuery) bool {
+	if !resource.IsActive {
+		return false
+	}
+
+	if query.Type != "" && !strings.EqualFold(resource.Type, query.Type) {
+		return false
+	}
+
+	if query.Location != "" && !strings.Contains(strings.ToLower(resource.Location), strings.ToLower(query.Location)) {
+		return false
+	}
+
+	if query.Capacity > 0 && resource.Capacity < query.Capacity {
+		return false
+	}
+
+	return true
+}
+
+// applyPagination applies limit and offset to the filtered resources
+func (r *InMemoryResourceRepository) applyPagination(resources []*Resource, limit, offset int) []*Resource {
 	start := offset
-	if start >= len(filtered) {
-		return []*Resource{}, nil
+	if start >= len(resources) {
+		return []*Resource{}
 	}
-	
+
 	end := start + limit
-	if end > len(filtered) {
-		end = len(filtered)
+	if end > len(resources) {
+		end = len(resources)
 	}
-	
-	return filtered[start:end], nil
+
+	return resources[start:end]
 }
 
 func (r *InMemoryResourceRepository) GetAvailabilitySlots(resourceID int) ([]*AvailabilitySlot, error) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
-	
+
 	var slots []*AvailabilitySlot
 	for _, slot := range r.slots {
 		if slot.ResourceID == resourceID && slot.IsActive {
 			slots = append(slots, slot)
 		}
 	}
-	
+
 	return slots, nil
 }
 
 func (r *InMemoryResourceRepository) CreateAvailabilitySlot(slot *AvailabilitySlot) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	slot.ID = r.nextSlotID
 	r.nextSlotID++
-	
+
 	r.slots[slot.ID] = slot
 	return nil
 }
@@ -159,13 +170,13 @@ func (r *InMemoryResourceRepository) CreateAvailabilitySlot(slot *AvailabilitySl
 func (r *InMemoryResourceRepository) ClearAvailabilitySlots(resourceID int) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	
+
 	for id, slot := range r.slots {
 		if slot.ResourceID == resourceID {
 			delete(r.slots, id)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -184,14 +195,14 @@ func (r *PostgreSQLResourceRepository) Create(resource *Resource) error {
 		INSERT INTO resources (name, type, description, capacity, location, properties, is_active, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`
-	
+
 	err := r.db.QueryRow(
 		query,
 		resource.Name, resource.Type, resource.Description, resource.Capacity,
 		resource.Location, resource.Properties, resource.IsActive,
 		resource.CreatedAt, resource.UpdatedAt,
 	).Scan(&resource.ID)
-	
+
 	return err
 }
 

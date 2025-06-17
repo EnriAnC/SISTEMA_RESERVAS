@@ -35,7 +35,11 @@ func (h *NotificationHandler) SendNotification(w http.ResponseWriter, r *http.Re
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(notification)
+	if err := json.NewEncoder(w).Encode(notification); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetNotifications retrieves notifications for a user
@@ -82,7 +86,11 @@ func (h *NotificationHandler) GetNotifications(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // ListNotifications is an alias for GetNotifications for backward compatibility
@@ -95,7 +103,7 @@ func (h *NotificationHandler) ListNotifications(w http.ResponseWriter, r *http.R
 func (h *NotificationHandler) GetNotification(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
-	
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid notification ID", http.StatusBadRequest)
@@ -114,7 +122,11 @@ func (h *NotificationHandler) GetNotification(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notification)
+	if err := json.NewEncoder(w).Encode(notification); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // UpdateStatus is an alias for UpdateNotificationStatus
@@ -127,7 +139,7 @@ func (h *NotificationHandler) UpdateStatus(w http.ResponseWriter, r *http.Reques
 func (h *NotificationHandler) UpdateNotificationStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
-	
+
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid notification ID", http.StatusBadRequest)
@@ -180,7 +192,11 @@ func (h *NotificationHandler) GetNotificationStats(w http.ResponseWriter, r *htt
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(stats)
+	if err := json.NewEncoder(w).Encode(stats); err != nil {
+		log.Printf("Error encoding response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // HealthCheck endpoint
@@ -190,7 +206,11 @@ func (h *NotificationHandler) HealthCheck(w http.ResponseWriter, r *http.Request
 		"status":  "healthy",
 		"service": "notification-service",
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding health check response: %v", err)
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }

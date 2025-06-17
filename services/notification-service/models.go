@@ -29,26 +29,49 @@ type NotificationTemplate string
 const (
 	TemplateBookingCreated   NotificationTemplate = "booking_created"
 	TemplateBookingConfirmed NotificationTemplate = "booking_confirmed"
-	TemplateBookingCancelled NotificationTemplate = "booking_cancelled"
+	TemplateBookingCanceled  NotificationTemplate = "booking_canceled"
 	TemplateBookingReminder  NotificationTemplate = "booking_reminder"
 	TemplateUserWelcome      NotificationTemplate = "user_welcome"
 )
 
+// Priority levels
+const (
+	PriorityHigh   = "high"
+	PriorityNormal = "normal"
+	PriorityLow    = "low"
+)
+
+// Channels
+const (
+	ChannelEmail   = "email"
+	ChannelSMS     = "sms"
+	ChannelPush    = "push"
+	ChannelWebhook = "webhook"
+)
+
+// Status values
+const (
+	StatusPending   = "pending"
+	StatusSent      = "sent"
+	StatusFailed    = "failed"
+	StatusDelivered = "delivered"
+)
+
 // Notification represents a notification record
 type Notification struct {
-	ID          int                    `json:"id" db:"id"`
-	UserID      int                    `json:"user_id" db:"user_id"`
-	Type        string                 `json:"type" db:"type"`
-	Title       string                 `json:"title" db:"title"`
-	Message     string                 `json:"message" db:"message"`
-	Channel     string                 `json:"channel" db:"channel"` // email, sms, push, webhook
-	Priority    string                 `json:"priority" db:"priority"` // high, normal, low
-	Status      string                 `json:"status" db:"status"` // pending, sent, failed
-	IsRead      bool                   `json:"is_read" db:"is_read"`
-	Metadata    map[string]interface{} `json:"metadata" db:"metadata"` // Additional data (JSON)
-	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
-	SentAt      *time.Time             `json:"sent_at,omitempty" db:"sent_at"`
-	ReadAt      *time.Time             `json:"read_at,omitempty" db:"read_at"`
+	ID        int                    `json:"id" db:"id"`
+	UserID    int                    `json:"user_id" db:"user_id"`
+	Type      string                 `json:"type" db:"type"`
+	Title     string                 `json:"title" db:"title"`
+	Message   string                 `json:"message" db:"message"`
+	Channel   string                 `json:"channel" db:"channel"`   // email, sms, push, webhook
+	Priority  string                 `json:"priority" db:"priority"` // high, normal, low
+	Status    string                 `json:"status" db:"status"`     // pending, sent, failed
+	IsRead    bool                   `json:"is_read" db:"is_read"`
+	Metadata  map[string]interface{} `json:"metadata" db:"metadata"` // Additional data (JSON)
+	CreatedAt time.Time              `json:"created_at" db:"created_at"`
+	SentAt    *time.Time             `json:"sent_at,omitempty" db:"sent_at"`
+	ReadAt    *time.Time             `json:"read_at,omitempty" db:"read_at"`
 }
 
 // NotificationRequest represents a request to send a notification
@@ -57,7 +80,7 @@ type NotificationRequest struct {
 	Type     string                 `json:"type" validate:"required"`
 	Title    string                 `json:"title" validate:"required,max=200"`
 	Message  string                 `json:"message" validate:"required,max=5000"`
-	Channel  string                 `json:"channel,omitempty"` // email, sms, push, webhook
+	Channel  string                 `json:"channel,omitempty"`  // email, sms, push, webhook
 	Priority string                 `json:"priority,omitempty"` // high, normal, low
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
@@ -78,11 +101,11 @@ type NotificationStats struct {
 
 // SendNotificationRequest represents a request to send a notification
 type SendNotificationRequest struct {
-	Type      NotificationType   `json:"type" validate:"required,oneof=EMAIL SMS PUSH"`
-	Template  NotificationTemplate `json:"template" validate:"required"`
-	Recipient string             `json:"recipient" validate:"required"`
-	Subject   string             `json:"subject" validate:"required,max=200"`
-	Body      string             `json:"body" validate:"required,max=5000"`
+	Type      NotificationType       `json:"type" validate:"required,oneof=EMAIL SMS PUSH"`
+	Template  NotificationTemplate   `json:"template" validate:"required"`
+	Recipient string                 `json:"recipient" validate:"required"`
+	Subject   string                 `json:"subject" validate:"required,max=200"`
+	Body      string                 `json:"body" validate:"required,max=5000"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -94,14 +117,14 @@ type UpdateStatusRequest struct {
 
 // ListNotificationsQuery represents query parameters for listing notifications
 type ListNotificationsQuery struct {
-	Type      NotificationType   `query:"type"`
-	Status    NotificationStatus `query:"status"`
-	Recipient string             `query:"recipient"`
+	Type      NotificationType     `query:"type"`
+	Status    NotificationStatus   `query:"status"`
+	Recipient string               `query:"recipient"`
 	Template  NotificationTemplate `query:"template"`
-	StartDate time.Time          `query:"start_date"`
-	EndDate   time.Time          `query:"end_date"`
-	Page      int                `query:"page"`
-	Size      int                `query:"size"`
+	StartDate time.Time            `query:"start_date"`
+	EndDate   time.Time            `query:"end_date"`
+	Page      int                  `query:"page"`
+	Size      int                  `query:"size"`
 }
 
 // BookingEventMessage represents a booking event from the message queue
@@ -162,16 +185,16 @@ type TemplateData struct {
 
 // NotificationBatch represents a batch of notifications to be sent
 type NotificationBatch struct {
-	ID            int             `json:"id"`
-	Notifications []Notification  `json:"notifications"`
-	Status        string          `json:"status"`
-	CreatedAt     time.Time       `json:"created_at"`
-	ProcessedAt   *time.Time      `json:"processed_at,omitempty"`
+	ID            int            `json:"id"`
+	Notifications []Notification `json:"notifications"`
+	Status        string         `json:"status"`
+	CreatedAt     time.Time      `json:"created_at"`
+	ProcessedAt   *time.Time     `json:"processed_at,omitempty"`
 }
 
 // IsRetryable checks if a notification can be retried
 func (n *Notification) IsRetryable() bool {
-	return n.Status == "failed" && n.GetRetryCount() < 3
+	return n.Status == StatusFailed && n.GetRetryCount() < 3
 }
 
 // CanBeSent checks if a notification can be sent
