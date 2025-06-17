@@ -291,7 +291,8 @@ jobs:
       with:
         sarif_file: ./services/${{ matrix.service }}/gosec-${{ matrix.service }}.sarif
         category: gosec-${{ matrix.service }}
-          - name: 🔍 Ejecutar go mod audit (vulnerabilidades en dependencias)
+        
+    - name: 🔍 Ejecutar go mod audit (vulnerabilidades en dependencias)
       if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: |
