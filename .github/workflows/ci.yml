@@ -12,33 +12,75 @@ on:
 # Variables de entorno globales
 env:
   GO_VERSION: '1.21'
-  GOLANGCI_LINT_VERSION: v1.54
+  GOLANGCI_LINT_VERSION: v1.55.2
+
+# Permisos mínimos requeridos
+permissions:
+  contents: read
+  checks: write
 
 jobs:
-  # Job 1: Verificación de código Go
-  build-and-lint:
-    name: 🏗️ Build & Lint
+  # Job 1: Detectar cambios para optimizar pipeline
+  detect-changes:
+    name: 🔍 Detectar Cambios
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        # Testeamos en múltiples versiones de Go para garantizar compatibilidad
-        go-version: ['1.21', '1.22']
-        service: ['user-service', 'resource-service', 'booking-service', 'notification-service']
-    
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      user-service: ${{ steps.changes.outputs.user-service }}
+      resource-service: ${{ steps.changes.outputs.resource-service }}
+      booking-service: ${{ steps.changes.outputs.booking-service }}
+      notification-service: ${{ steps.changes.outputs.notification-service }}
+      api-gateway: ${{ steps.changes.outputs.api-gateway }}
+      infrastructure: ${{ steps.changes.outputs.infrastructure }}
     steps:
-    # Paso 1: Checkout del código
     - name: 📥 Checkout código
       uses: actions/checkout@v4
       
-    # Paso 2: Configurar Go
+    - name: 🔍 Detectar archivos cambiados
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          services:
+            - 'services/**'
+          user-service:
+            - 'services/user-service/**'
+          resource-service:
+            - 'services/resource-service/**'
+          booking-service:
+            - 'services/booking-service/**'
+          notification-service:
+            - 'services/notification-service/**'
+          api-gateway:
+            - 'api-gateway/**'
+          infrastructure:
+            - 'infrastructure/**'
+            - 'docker-compose.yml'
+            - 'kubernetes/**'
+
+  # Job 2: Validación básica y setup común
+  setup-validation:
+    name: 🔧 Setup & Validación Básica
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services == 'true'
+    
+    strategy:
+      matrix:
+        go-version: ['1.21', '1.22']
+      fail-fast: false
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
     - name: 🐹 Configurar Go ${{ matrix.go-version }}
       uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go-version }}
+        cache: false # Manejamos cache manualmente para mejor control
         
-    # Paso 3: Cache de dependencias Go para acelerar builds
-    - name: 📦 Cache dependencias Go
+    - name: 📦 Setup Go cache
       uses: actions/cache@v3
       with:
         path: |
@@ -47,58 +89,165 @@ jobs:
         key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-go-
           
-    # Paso 4: Descargar dependencias
+    - name: 🔍 Verificar go.mod consistency
+      run: |
+        echo "🔍 Verificando consistencia de módulos Go..."
+        exit_code=0
+        for service in user-service resource-service booking-service notification-service; do
+          if [ -f "services/$service/go.mod" ]; then
+            echo "Verificando services/$service..."
+            cd "services/$service"
+            go mod tidy
+            if [ -n "$(git status --porcelain go.mod go.sum 2>/dev/null)" ]; then
+              echo "❌ $service: go mod tidy tiene cambios pendientes"
+              git diff go.mod go.sum || true
+              exit_code=1
+            else
+              echo "✅ $service: go mod está limpio"
+            fi
+            cd ../..
+          fi
+        done
+        exit $exit_code
+
+  # Job 3: Build y test por servicio (paralelo)
+  service-build-test:
+    name: 🏗️ Build & Test
+    runs-on: ubuntu-latest
+    needs: [detect-changes, setup-validation]
+    if: needs.detect-changes.outputs.services == 'true'
+    
+    strategy:
+      matrix:
+        service: [user-service, resource-service, booking-service, notification-service]
+        go-version: ['1.21']
+      fail-fast: false
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar si el servicio cambió
+      id: should-run
+      run: |
+        if [ "${{ needs.detect-changes.outputs[matrix.service] }}" == "true" ] || [ "${{ github.event_name }}" == "push" ]; then
+          echo "run=true" >> $GITHUB_OUTPUT
+        else
+          echo "run=false" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: 🐹 Configurar Go ${{ matrix.go-version }}
+      if: steps.should-run.outputs.run == 'true'
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        
+    - name: 📦 Cache dependencias Go
+      if: steps.should-run.outputs.run == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        
     - name: 📥 Descargar dependencias
+      if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: go mod download
       
-    # Paso 5: Verificar que go mod tidy no tiene cambios pendientes
-    - name: 🔍 Verificar go mod tidy
-      working-directory: ./services/${{ matrix.service }}
-      run: |
-        go mod tidy
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "❌ go mod tidy tiene cambios pendientes"
-          git diff
-          exit 1
-        else
-          echo "✅ go mod está limpio"
-        fi
-        
-    # Paso 6: Verificar formato del código
-    - name: 🎨 Verificar formato Go (gofmt)
+    - name: 🎨 Verificar formato (gofmt)
+      if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: |
         if [ -n "$(gofmt -l .)" ]; then
-          echo "❌ Código no formateado correctamente:"
+          echo "❌ Código no formateado correctamente en ${{ matrix.service }}:"
           gofmt -d .
           exit 1
         else
-          echo "✅ Código correctamente formateado"
+          echo "✅ Código correctamente formateado en ${{ matrix.service }}"
         fi
         
-    # Paso 7: Verificar que el código compila
     - name: 🔨 Compilar servicio
+      if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: |
         echo "🏗️ Compilando ${{ matrix.service }}..."
         go build -v ./...
         echo "✅ ${{ matrix.service }} compilado exitosamente"
         
-    # Paso 8: Verificar que no hay errores de go vet
-    - name: 🔍 Análisis estático (go vet)
+    - name: 🔍 go vet
+      if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: |
         echo "🔍 Ejecutando go vet en ${{ matrix.service }}..."
         go vet ./...
-        echo "✅ go vet pasó sin errores"
+        echo "✅ go vet pasó sin errores en ${{ matrix.service }}"
+        
+    - name: 🧪 Ejecutar tests
+      if: steps.should-run.outputs.run == 'true'
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🧪 Ejecutando tests en ${{ matrix.service }}..."
+        go test -v -race -coverprofile=coverage.out ./...
+        echo "✅ Tests completados en ${{ matrix.service }}"
+        
+    - name: 📊 Upload coverage
+      if: steps.should-run.outputs.run == 'true'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./services/${{ matrix.service }}/coverage.out
+        flags: ${{ matrix.service }}
+        name: ${{ matrix.service }}-coverage
 
-  # Job 2: Linting avanzado con golangci-lint
+  # Job 4: Linting avanzado (paralelo por servicio)
   advanced-lint:
-    name: 🧹 Linting Avanzado
+    name: 🧹 Linting
     runs-on: ubuntu-latest
-    needs: build-and-lint
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.services == 'true'
+    
+    strategy:
+      matrix:
+        service: [user-service, resource-service, booking-service, notification-service]
+      fail-fast: false
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar si el servicio cambió
+      id: should-run
+      run: |
+        if [ "${{ needs.detect-changes.outputs[matrix.service] }}" == "true" ] || [ "${{ github.event_name }}" == "push" ]; then
+          echo "run=true" >> $GITHUB_OUTPUT
+        else
+          echo "run=false" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: 🐹 Configurar Go
+      if: steps.should-run.outputs.run == 'true'
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: 🧹 golangci-lint para ${{ matrix.service }}
+      if: steps.should-run.outputs.run == 'true'
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: ${{ env.GOLANGCI_LINT_VERSION }}
+        working-directory: services/${{ matrix.service }}
+        args: --timeout=5m --out-format=github-actions
+        only-new-issues: false
+
+  # Job 5: Seguridad y vulnerabilidades
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.services == 'true'
     
     steps:
     - name: 📥 Checkout código
@@ -109,36 +258,17 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
         
-    # Ejecutar golangci-lint en cada servicio
-    - name: 🧹 golangci-lint
-      uses: golangci/golangci-lint-action@v3
+    - name: 🔍 Ejecutar Gosec Security Scanner
+      uses: securecodewarrior/github-action-gosec@master
       with:
-        version: ${{ env.GOLANGCI_LINT_VERSION }}
-        working-directory: services/user-service
-        args: --timeout=5m
+        args: '-fmt sarif -out gosec.sarif ./...'
         
-    - name: 🧹 golangci-lint (resource-service)
-      uses: golangci/golangci-lint-action@v3
+    - name: 📊 Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
       with:
-        version: ${{ env.GOLANGCI_LINT_VERSION }}
-        working-directory: services/resource-service
-        args: --timeout=5m
-        
-    - name: 🧹 golangci-lint (booking-service)
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: ${{ env.GOLANGCI_LINT_VERSION }}
-        working-directory: services/booking-service
-        args: --timeout=5m
-        
-    - name: 🧹 golangci-lint (notification-service)
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: ${{ env.GOLANGCI_LINT_VERSION }}
-        working-directory: services/notification-service
-        args: --timeout=5m
+        sarif_file: gosec.sarif
 
-  # Job 3: Verificación de estructura del proyecto
+  # Job 6: Verificación de estructura del proyecto
   project-structure:
     name: 📁 Verificar Estructura
     runs-on: ubuntu-latest
@@ -156,6 +286,7 @@ jobs:
           "README.md"
           "QUICKSTART.md"
           ".gitignore"
+          ".golangci.yml"
         )
         
         # Directorios requeridos
@@ -171,13 +302,15 @@ jobs:
           "scripts"
         )
         
+        exit_code=0
+        
         # Verificar archivos
         for file in "${required_files[@]}"; do
           if [ -f "$file" ]; then
             echo "✅ $file existe"
           else
             echo "❌ $file falta"
-            exit 1
+            exit_code=1
           fi
         done
         
@@ -187,22 +320,100 @@ jobs:
             echo "✅ $dir/ existe"
           else
             echo "❌ $dir/ falta"
-            exit 1
+            exit_code=1
           fi
         done
         
         # Verificar que cada servicio tiene sus archivos esenciales
         services=("user-service" "resource-service" "booking-service" "notification-service")
         for service in "${services[@]}"; do
-          service_files=("go.mod" "main.go" "Dockerfile" "README.md")
+          service_files=("go.mod" "main.go" "README.md")
           for file in "${service_files[@]}"; do
             if [ -f "services/$service/$file" ]; then
               echo "✅ services/$service/$file existe"
             else
               echo "❌ services/$service/$file falta"
-              exit 1
+              exit_code=1
             fi
           done
         done
         
-        echo "🎉 Estructura del proyecto verificada correctamente"
+        if [ $exit_code -eq 0 ]; then
+          echo "🎉 Estructura del proyecto verificada correctamente"
+        fi
+        
+        exit $exit_code
+
+  # Job 7: Docker build (solo si hay cambios relevantes)
+  docker-build:
+    name: 🐳 Docker Build
+    runs-on: ubuntu-latest
+    needs: [detect-changes, service-build-test]
+    if: needs.detect-changes.outputs.services == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    
+    strategy:
+      matrix:
+        service: [user-service, resource-service, booking-service, notification-service]
+      fail-fast: false
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Verificar si el servicio cambió
+      id: should-run
+      run: |
+        if [ "${{ needs.detect-changes.outputs[matrix.service] }}" == "true" ] || [ "${{ github.event_name }}" == "push" ]; then
+          echo "run=true" >> $GITHUB_OUTPUT
+        else
+          echo "run=false" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: 🐳 Setup Docker Buildx
+      if: steps.should-run.outputs.run == 'true'
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🏗️ Build Docker image para ${{ matrix.service }}
+      if: steps.should-run.outputs.run == 'true'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/${{ matrix.service }}
+        push: false
+        tags: ${{ matrix.service }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Job final: Status check agregado
+  ci-success:
+    name: ✅ CI Success
+    runs-on: ubuntu-latest
+    needs: [setup-validation, service-build-test, advanced-lint, project-structure]
+    if: always()
+    
+    steps:
+    - name: 🎉 All checks passed
+      if: |
+        needs.setup-validation.result == 'success' &&
+        needs.service-build-test.result == 'success' &&
+        needs.advanced-lint.result == 'success' &&
+        needs.project-structure.result == 'success'
+      run: |
+        echo "🎉 ¡Todos los checks del CI han pasado exitosamente!"
+        echo "✅ Setup y validación: OK"
+        echo "✅ Build y tests: OK" 
+        echo "✅ Linting: OK"
+        echo "✅ Estructura: OK"
+        
+    - name: ❌ Some checks failed
+      if: |
+        needs.setup-validation.result == 'failure' ||
+        needs.service-build-test.result == 'failure' ||
+        needs.advanced-lint.result == 'failure' ||
+        needs.project-structure.result == 'failure'
+      run: |
+        echo "❌ Algunos checks han fallado:"
+        echo "Setup: ${{ needs.setup-validation.result }}"
+        echo "Build/Test: ${{ needs.service-build-test.result }}"
+        echo "Linting: ${{ needs.advanced-lint.result }}"
+        echo "Estructura: ${{ needs.project-structure.result }}"
+        exit 1
