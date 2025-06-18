@@ -70,13 +70,13 @@ echo "🔍 Getting API Gateway external access..."
 EXTERNAL_IP=$(kubectl get service api-gateway-service -n reservation-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
 EXTERNAL_PORT=$(kubectl get service api-gateway-service -n reservation-system -o jsonpath='{.spec.ports[0].port}')
 
-if [ "$EXTERNAL_IP" = "pending" ] || [ -n "$EXTERNAL_IP" ]; then
+if [ "$EXTERNAL_IP" = "pending" ] || [ -z "$EXTERNAL_IP" ]; then
     echo "⏳ External IP is still pending. You can check later with:"
     echo "   kubectl get service api-gateway-service -n reservation-system"
     
     # Try to get NodePort information
     NODE_PORT=$(kubectl get service api-gateway-service -n reservation-system -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
-    if [ ! -n "$NODE_PORT" ]; then
+    if [ -z "$NODE_PORT" ]; then
         NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
         echo "   Or try NodePort access: http://$NODE_IP:$NODE_PORT"
     fi
