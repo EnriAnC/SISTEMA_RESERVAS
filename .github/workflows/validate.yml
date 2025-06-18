@@ -195,20 +195,6 @@ jobs:
       run: |
         npm install -g markdownlint-cli
         
-    # Crear configuración para markdownlint
-    - name: ⚙️ Configurar markdownlint
-      run: |
-        cat > .markdownlint.json << EOF
-        {
-          "MD013": {
-            "line_length": 120,
-            "tables": false
-          },
-          "MD033": false,
-          "MD041": false
-        }
-        EOF
-        
     - name: 🔍 Validar archivos Markdown
       run: |
         echo "📝 Validando archivos Markdown..."
