@@ -41,7 +41,7 @@ services:
 
   # User Service
   user-service:
-    build: 
+    build:
       context: ../services/user-service
       dockerfile: Dockerfile
     container_name: user-service
