@@ -40,7 +40,7 @@ spec:
             claimName: postgres-pvc
         - name: init-script
           configMap:
-              name: postgres-init-script
+            name: postgres-init-script
 ---
 apiVersion: v1
 kind: Service

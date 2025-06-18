@@ -1,5 +1,4 @@
 ---
-# filepath: c:\Users\EnriA\Desktop\Programación\BOOTCAMP_CLOUD\MODULO 2\ENTREGABLE\SISTEMA_RESERVAS\kubernetes\booking-service.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
