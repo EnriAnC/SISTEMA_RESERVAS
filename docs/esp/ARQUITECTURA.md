@@ -2,7 +2,9 @@
 
 ## Resumen
 
-El Sistema de Reservas es un sistema de reservas nativo en la nube construido usando arquitectura de microservicios. El sistema permite a los usuarios gestionar reservas para varios recursos como salas de reuniones, equipos y espacios de trabajo a través de una API unificada.
+El Sistema de Reservas es un sistema de reservas nativo en la nube construido usando arquitectura de microservicios.
+El sistema permite a los usuarios gestionar reservas para varios recursos como salas de reuniones,
+equipos y espacios de trabajo a través de una API unificada.
 
 ## Principios de Arquitectura
 
@@ -312,4 +314,5 @@ El Sistema de Reservas es un sistema de reservas nativo en la nube construido us
 - **Aplicaciones Móviles**: Soporte de aplicaciones móviles nativas
 - **Características AI/ML**: Programación inteligente y optimización de recursos
 
-Esta arquitectura proporciona una base sólida para un sistema de reservas escalable, mantenible y extensible que puede crecer con las necesidades del negocio mientras mantiene alto rendimiento y confiabilidad.
+Esta arquitectura proporciona una base sólida para un sistema de reservas escalable, mantenible y extensible
+que puede crecer con las necesidades del negocio mientras mantiene alto rendimiento y confiabilidad.

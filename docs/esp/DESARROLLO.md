@@ -1,6 +1,7 @@
 # Guía de Desarrollo
 
-Esta guía proporciona instrucciones para configurar el entorno de desarrollo y contribuir al proyecto Sistema de Reservas.
+Esta guía proporciona instrucciones para configurar el entorno de desarrollo
+y contribuir al proyecto Sistema de Reservas.
 
 ## Prerequisitos
 

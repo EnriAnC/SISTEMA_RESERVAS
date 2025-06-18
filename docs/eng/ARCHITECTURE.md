@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Sistema de Reservas is a cloud-native reservation system built using microservices architecture. The system enables users to manage reservations for various resources such as meeting rooms, equipment, and workspaces through a unified API.
+The Sistema de Reservas is a cloud-native reservation system built using microservices architecture.
+The system enables users to manage reservations for various resources such as meeting rooms, equipment,
+and workspaces through a unified API.
 
 ## Architecture Principles
 
@@ -312,4 +314,6 @@ The Sistema de Reservas is a cloud-native reservation system built using microse
 - **Mobile Applications**: Native mobile app support
 - **AI/ML Features**: Smart scheduling and resource optimization
 
-This architecture provides a solid foundation for a scalable, maintainable, and extensible reservation system that can grow with business needs while maintaining high performance and reliability.
+This architecture provides a solid foundation for a scalable, maintainable,
+and extensible reservation system that can grow with business needs
+while maintaining high performance and reliability.

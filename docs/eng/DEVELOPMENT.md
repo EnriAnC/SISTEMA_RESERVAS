@@ -1,6 +1,7 @@
 # Development Guide
 
-This guide provides instructions for setting up the development environment and contributing to the Sistema de Reservas project.
+This guide provides instructions for setting up the development environment
+and contributing to the Sistema de Reservas project.
 
 ## Prerequisites
 
