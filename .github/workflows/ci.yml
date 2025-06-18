@@ -279,11 +279,23 @@ jobs:
       uses: securego/gosec@master
       with:
         version: v2.20.0
+        go-path: ./services/${{ matrix.service }}
         flags: '-no-fail -fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
+
+
+    - name: 🕵️‍♀️ Debug-> Listar archivos SARIF generados (SIEMPRE EJECUTAR ESTO PARA DEPURAR)
+      if: steps.should-run.outputs.run == 'true'
+      run: |
+        echo "Buscando archivos SARIF en todo el repositorio:"
+        find . -name "*.sarif"
+        echo "Contenido del directorio raíz:"
+        ls -la .
+        echo "Contenido del directorio del servicio:"
+        ls -la ./services/${{ matrix.service }}
 
     - name: 📊 Upload SARIF file
       if: steps.should-run.outputs.run == 'true'
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ./gosec-${{ matrix.service }}.sarif
         category: gosec-${{ matrix.service }}
