@@ -59,7 +59,7 @@ for i in {1..30}; do
     fi
     echo "⏳ Waiting for API Gateway... (attempt $i/30)"
     sleep 5
-    if [ $i -eq 30 ]; then
+    if [ "$i" -eq 30 ]; then
         echo "❌ API Gateway health check failed"
         exit 1
     fi
