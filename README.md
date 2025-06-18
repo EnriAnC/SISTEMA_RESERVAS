@@ -10,7 +10,8 @@
 
 ## Descripción
 
-Sistema de reservas escalable basado en microservicios desarrollado en Go, diseñado para manejar reservas de recursos con alta disponibilidad y escalabilidad automática.
+Sistema de reservas escalable basado en microservicios desarrollado en Go,
+diseñado para manejar reservas de recursos con alta disponibilidad y escalabilidad automática.
 
 ## Arquitectura
 
