@@ -277,21 +277,16 @@ jobs:
     - name: 🔍 Ejecutar Gosec Security Scanner
       if: steps.should-run.outputs.run == 'true'
       uses: securego/gosec@master
-      # ¡IMPORTANTE! Cambia el directorio de trabajo para este paso.
-      # Esto hace que Gosec se ejecute DENTRO de la carpeta del servicio.
       working-directory: ./services/${{ matrix.service }}
       with:
         version: v2.20.0
-        # go-path ahora es '.' porque ya estamos en el directorio del servicio
         go-path: .
-        # El archivo de salida ahora se creará en el directorio de trabajo (./services/el-servicio/)
         flags: '-fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
 
     - name: 📊 Upload SARIF file
       if: steps.should-run.outputs.run == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
-        # La ruta de sarif_file ahora es correcta porque Gosec lo puso ahí
         sarif_file: ./services/${{ matrix.service }}/gosec-${{ matrix.service }}.sarif
         category: gosec-${{ matrix.service }}
       
