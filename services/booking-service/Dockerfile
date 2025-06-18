@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o booking-service .
 
 # Use a minimal base image
-FROM alpine:latest
+FROM alpine:3.19
 
 # Install ca-certificates for HTTPS
 RUN apk --no-cache add ca-certificates
