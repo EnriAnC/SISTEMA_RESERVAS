@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,18 +15,18 @@ spec:
         app: postgres
     spec:
       containers:
-      - name: postgres
-        image: postgres:15-alpine
-        ports:
-        - containerPort: 5432
-        envFrom:
-        - configMapRef:
-            name: postgres-config
-        volumeMounts:
-        - name: postgres-storage
-          mountPath: /var/lib/postgresql/data
-        - name: init-script
-          mountPath: /docker-entrypoint-initdb.d
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-config
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
       resources:
         requests:
           memory: "512Mi"
@@ -34,12 +35,12 @@ spec:
           memory: "1Gi"
           cpu: "500m"
       volumes:
-      - name: postgres-storage
-        persistentVolumeClaim:
-          claimName: postgres-pvc
-      - name: init-script
-        configMap:
-          name: postgres-init-script
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: init-script
+          configMap:
+              name: postgres-init-script
 ---
 apiVersion: v1
 kind: Service
@@ -50,8 +51,8 @@ spec:
   selector:
     app: postgres
   ports:
-  - port: 5432
-    targetPort: 5432
+    - port: 5432
+      targetPort: 5432
   type: ClusterIP
 ---
 apiVersion: v1
