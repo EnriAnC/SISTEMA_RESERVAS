@@ -57,6 +57,8 @@ jobs:
             - 'infrastructure/**'
             - 'docker-compose.yml'
             - 'kubernetes/**'
+          workflows:
+            - '.github/workflows/**'
 
   # Job 2: Validación básica y setup común
   setup-validation:
