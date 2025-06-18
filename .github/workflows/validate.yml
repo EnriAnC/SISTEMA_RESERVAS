@@ -99,18 +99,36 @@ jobs:
       run: |
         echo "☸️ Validando manifiestos de Kubernetes..."
         
+        # Habilita set -e para que el script falle inmediatamente si un comando falla
+        # y pipefail para que el error en una tubería sea el del comando que falla.
+        set -eo pipefail
+        
+        error_found=false
+        
         if [ -d "kubernetes" ]; then
           find kubernetes -name "*.yaml" -o -name "*.yml" | while read -r file; do
             echo "🔍 Validando $file..."
-            if yamllint -c .yamllint.yml "$file"; then
+            # Captura la salida de yamllint (tanto stdout como stderr)
+            if output=$(yamllint -c .yamllint.yml "$file" 2>&1); then
               echo "✅ $file es válido"
             else
-              echo "❌ $file tiene errores de sintaxis"
-              exit 1
+              echo "❌ $file tiene errores de sintaxis:"
+              echo "$output" # <--- ¡Aquí se imprime el error detallado de yamllint!
+              error_found=true
+              # No hacemos 'exit 1' dentro del bucle para que intente validar todos los archivos
             fi
           done
         else
           echo "⚠️ Directorio kubernetes no encontrado"
+          error_found=true # Si no se encuentra el directorio, considéralo un error
+        fi
+        
+        # Después de validar todos los archivos, si se encontró algún error, falla el paso.
+        if [ "$error_found" = true ]; then
+          echo "❌ Se encontraron errores de sintaxis en archivos Kubernetes."
+          exit 1
+        else
+          echo "🎉 Todos los manifiestos de Kubernetes son válidos."
         fi
         
     - name: 🔍 Validar docker-compose.yml
