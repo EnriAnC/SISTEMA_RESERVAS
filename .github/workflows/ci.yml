@@ -276,7 +276,7 @@ jobs:
         
     - name: 🔍 Ejecutar Gosec Security Scanner
       if: steps.should-run.outputs.run == 'true'
-      uses: securecodewarrior/github-action-gosec@v1
+      uses: securego/gosec@master
       with:
         # 'version' aquí especifica qué VERSIÓN de la herramienta 'gosec' (de securego/gosec)
         # quieres que la acción de Secure Code Warrior instale y use.
