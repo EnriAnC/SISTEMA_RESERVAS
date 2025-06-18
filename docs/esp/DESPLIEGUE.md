@@ -2,7 +2,8 @@
 
 ## Resumen
 
-Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando Docker Compose para desarrollo/pruebas y Kubernetes para entornos de producción.
+Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando Docker Compose para desarrollo/pruebas
+y Kubernetes para entornos de producción.
 
 ## Prerequisitos
 
