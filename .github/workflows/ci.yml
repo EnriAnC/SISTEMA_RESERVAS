@@ -248,7 +248,7 @@ jobs:
     name: 🔒 Security Scan
     runs-on: ubuntu-latest
     needs: [detect-changes]
-    if: needs.detect-changes.outputs.services == 'true'
+    if: needs.detect-changes.outputs.services == 'true' || github.event_name == 'push' || needs.detect-changes.outputs.workflows == 'true'
     
     strategy:
       matrix:
