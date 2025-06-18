@@ -1,0 +1,4 @@
+override:
+  DL3018: # Regla de Hadolint DL3018 (Pin versions in apk add)
+    packages: # Para los siguientes paquetes, ignorar esta regla
+      - ca-certificates
