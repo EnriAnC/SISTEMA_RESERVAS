@@ -1,6 +1,8 @@
 # API Gateway
 
-The API Gateway serves as the single entry point for all client requests to the reservation system microservices. It's built using KrakenD, a high-performance API Gateway that provides routing, load balancing, authentication, and other essential features.
+The API Gateway serves as the single entry point for all client requests to the reservation system microservices.
+It's built using KrakenD, a high-performance API Gateway that provides routing, load balancing, authentication,
+and other essential features.
 
 ## Features
 
