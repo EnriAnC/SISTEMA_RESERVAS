@@ -1,4 +1,7 @@
+# .hadolint.yaml
+ignored:
+  - DL3018 # Esta regla se aplica a 'apk add'
 override:
-  DL3018: # Regla de Hadolint DL3018 (Pin versions in apk add)
-    packages: # Para los siguientes paquetes, ignorar esta regla
+  DL3018: # Configuración específica para DL3018
+    packages: # Lista de paquetes para los cuales ignorar DL3018
       - ca-certificates
