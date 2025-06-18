@@ -7,6 +7,7 @@ Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando D
 ## Prerequisitos
 
 ### Requisitos del Sistema
+
 - **CPU**: 2+ núcleos
 - **Memoria**: 4GB+ RAM
 - **Almacenamiento**: 10GB+ espacio disponible
@@ -15,15 +16,18 @@ Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando D
 ### Software Requerido
 
 #### Para Despliegue con Docker
+
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 
 #### Para Despliegue en Kubernetes
+
 - Clúster Kubernetes 1.24+
 - Herramienta CLI kubectl
 - Helm 3.0+ (opcional)
 
 #### Herramientas de Desarrollo
+
 - Git
 - Go 1.21+ (para desarrollo local)
 - curl o Postman (para pruebas de API)
@@ -35,18 +39,21 @@ Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando D
 ### Inicio Rápido
 
 1. **Clonar el repositorio**:
+
    ```bash
    git clone <url-repositorio>
    cd SISTEMA_RESERVAS
    ```
 
 2. **Ejecutar el script de despliegue**:
+
    ```bash
    chmod +x scripts/deploy-docker.sh
    ./scripts/deploy-docker.sh
    ```
 
 3. **Verificar despliegue**:
+
    ```bash
    curl http://localhost:8080/health
    ```
@@ -54,31 +61,35 @@ Esta guía cubre las opciones de despliegue para el Sistema de Reservas usando D
 ### Despliegue Manual con Docker Compose
 
 1. **Construir todas las imágenes**:
+
    ```bash
    chmod +x scripts/build-images.sh
    ./scripts/build-images.sh
    ```
 
 2. **Iniciar servicios**:
+
    ```bash
    cd infrastructure
    docker-compose up -d
    ```
 
 3. **Verificar estado de servicios**:
+
    ```bash
    docker-compose ps
    docker-compose logs -f
    ```
 
 ### URLs de Servicios (Docker Compose)
-- **API Gateway**: http://localhost:8080
-- **Servicio de Usuarios**: http://localhost:8081
-- **Servicio de Recursos**: http://localhost:8082
-- **Servicio de Reservas**: http://localhost:8083
-- **Servicio de Notificaciones**: http://localhost:8084
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
+
+- **API Gateway**: <http://localhost:8080>
+- **Servicio de Usuarios**: <http://localhost:8081>
+- **Servicio de Recursos**: <http://localhost:8082>
+- **Servicio de Reservas**: <http://localhost:8083>
+- **Servicio de Notificaciones**: <http://localhost:8084>
+- **Grafana**: <http://localhost:3000> (admin/admin)
+- **Prometheus**: <http://localhost:9090>
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
 
@@ -108,6 +119,7 @@ SMS_AUTH_TOKEN=tu_token_twilio
 ### Configuración del Clúster
 
 #### Opción 1: Desarrollo Local (minikube)
+
 ```bash
 # Instalar minikube
 curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
@@ -121,16 +133,19 @@ minikube addons enable ingress
 #### Opción 2: Proveedores de Nube
 
 **AWS EKS**:
+
 ```bash
 eksctl create cluster --name reservation-system --version 1.24 --region us-west-2 --nodegroup-name workers --node-type t3.medium --nodes 3
 ```
 
 **Google GKE**:
+
 ```bash
 gcloud container clusters create reservation-system --zone us-central1-a --machine-type e2-medium --num-nodes 3
 ```
 
 **Azure AKS**:
+
 ```bash
 az aks create --resource-group myResourceGroup --name reservation-system --node-count 3 --node-vm-size Standard_B2s
 ```
@@ -138,6 +153,7 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
 ### Pasos de Despliegue en Kubernetes
 
 1. **Preparar imágenes**:
+
    ```bash
    # Construir imágenes
    ./scripts/build-images.sh
@@ -155,12 +171,14 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
    ```
 
 2. **Desplegar en Kubernetes**:
+
    ```bash
    chmod +x scripts/deploy-k8s.sh
    ./scripts/deploy-k8s.sh
    ```
 
 3. **Verificar despliegue**:
+
    ```bash
    kubectl get all -n reservation-system
    kubectl get ingress -n reservation-system
@@ -169,11 +187,13 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
 ### Despliegue Manual en Kubernetes
 
 1. **Crear namespace y configuraciones**:
+
    ```bash
    kubectl apply -f kubernetes/configmaps.yaml
    ```
 
 2. **Desplegar bases de datos**:
+
    ```bash
    kubectl apply -f kubernetes/postgres.yaml
    kubectl apply -f kubernetes/redis.yaml
@@ -184,6 +204,7 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
    ```
 
 3. **Desplegar microservicios**:
+
    ```bash
    kubectl apply -f kubernetes/user-service.yaml
    kubectl apply -f kubernetes/resource-service.yaml
@@ -192,6 +213,7 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
    ```
 
 4. **Desplegar API Gateway**:
+
    ```bash
    kubectl apply -f kubernetes/api-gateway.yaml
    ```
@@ -199,24 +221,28 @@ az aks create --resource-group myResourceGroup --name reservation-system --node-
 ### Acceso a Servicios en Kubernetes
 
 #### Opción 1: LoadBalancer (Nube)
+
 ```bash
 kubectl get service api-gateway-service -n reservation-system
 # Usar EXTERNAL-IP para acceder a la API
 ```
 
 #### Opción 2: NodePort (Local)
+
 ```bash
 kubectl get service api-gateway-service -n reservation-system
 # Usar IP del nodo + NodePort
 ```
 
 #### Opción 3: Port Forward (Desarrollo)
+
 ```bash
 kubectl port-forward service/api-gateway-service 8080:8080 -n reservation-system
 # Acceder vía http://localhost:8080
 ```
 
 #### Opción 4: Ingress (Recomendado)
+
 ```bash
 # Agregar a /etc/hosts (desarrollo local)
 echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
@@ -231,6 +257,7 @@ echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
 ### Endurecimiento de Seguridad
 
 1. **Gestión de Secretos**:
+
    ```bash
    # Crear secretos de producción
    kubectl create secret generic app-secrets \
@@ -241,6 +268,7 @@ echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
    ```
 
 2. **Configuración TLS**:
+
    ```yaml
    # Agregar a configuración de ingress
    spec:
@@ -251,6 +279,7 @@ echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
    ```
 
 3. **Límites de Recursos**:
+
    ```yaml
    resources:
      requests:
@@ -262,6 +291,7 @@ echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
    ```
 
 4. **Políticas de Red**:
+
    ```yaml
    apiVersion: networking.k8s.io/v1
    kind: NetworkPolicy
@@ -282,6 +312,7 @@ echo "$(minikube ip) api.reservation-system.local" | sudo tee -a /etc/hosts
 ### Configuración de Base de Datos
 
 #### Configuración PostgreSQL de Producción
+
 ```bash
 # Usar Helm para PostgreSQL de producción
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -293,6 +324,7 @@ helm install postgres bitnami/postgresql \
 ```
 
 #### Configuración Redis
+
 ```bash
 # Usar Helm para Redis de producción
 helm install redis bitnami/redis \
@@ -304,6 +336,7 @@ helm install redis bitnami/redis \
 ### Configuración de Monitorización
 
 #### Prometheus y Grafana
+
 ```bash
 # Agregar repositorio Helm de Prometheus
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -321,6 +354,7 @@ kubectl port-forward service/prometheus-grafana 3000:80 -n monitoring
 ### Estrategia de Backup
 
 #### Backup de Base de Datos
+
 ```bash
 # Backup PostgreSQL
 kubectl exec -it postgres-pod -n reservation-system -- pg_dump -U admin reservations_db > backup.sql
@@ -403,6 +437,7 @@ spec:
 ### Problemas Comunes
 
 #### Servicios No Inician
+
 ```bash
 # Verificar estado de pods
 kubectl get pods -n reservation-system
@@ -415,6 +450,7 @@ kubectl describe pod <nombre-pod> -n reservation-system
 ```
 
 #### Problemas de Conexión a Base de Datos
+
 ```bash
 # Probar conectividad de base de datos
 kubectl exec -it deployment/user-service -n reservation-system -- /bin/sh
@@ -422,6 +458,7 @@ kubectl exec -it deployment/user-service -n reservation-system -- /bin/sh
 ```
 
 #### API Gateway No Accesible
+
 ```bash
 # Verificar estado del servicio
 kubectl get service api-gateway-service -n reservation-system
@@ -436,6 +473,7 @@ kubectl exec -it deployment/api-gateway -n reservation-system -- curl localhost:
 ### Análisis de Logs
 
 #### Logging Centralizado con ELK Stack
+
 ```bash
 # Desplegar Elasticsearch
 helm install elasticsearch elastic/elasticsearch --namespace logging --create-namespace
@@ -448,6 +486,7 @@ helm install filebeat elastic/filebeat --namespace logging
 ```
 
 #### Logs de Aplicación
+
 ```bash
 # Seguir logs para todos los servicios
 kubectl logs -f -l app=user-service -n reservation-system
@@ -459,6 +498,7 @@ kubectl logs -f --selector="app in (user-service,resource-service,booking-servic
 ### Monitorización de Rendimiento
 
 #### Uso de Recursos
+
 ```bash
 # Verificar uso de recursos
 kubectl top pods -n reservation-system
@@ -469,6 +509,7 @@ kubectl get --raw /metrics
 ```
 
 #### Rendimiento de Base de Datos
+
 ```bash
 # Rendimiento PostgreSQL
 kubectl exec -it deployment/postgres -n reservation-system -- psql -U admin -d reservations_db -c "

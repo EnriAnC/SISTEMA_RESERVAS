@@ -5,12 +5,14 @@ This guide will help you get the Sistema de Reservas up and running in minutes.
 ## Prerequisites
 
 Make sure you have installed:
+
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
 - [Git](https://git-scm.com/downloads)
 
 ## Option 1: Docker Compose (Recommended for Testing)
 
 ### 1. Clone and Start
+
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -24,6 +26,7 @@ docker-compose up -d
 ```
 
 ### 2. Wait for Services to Start
+
 ```bash
 # Check service status
 docker-compose ps
@@ -33,6 +36,7 @@ docker-compose logs -f
 ```
 
 ### 3. Verify Installation
+
 ```bash
 # Test API Gateway
 curl http://localhost:8080/users/health
@@ -46,6 +50,7 @@ All health checks should return `200 OK`.
 ## Option 2: Kubernetes (Production)
 
 ### 1. Deploy to Kubernetes
+
 ```bash
 # Apply all manifests
 kubectl apply -f kubernetes/
@@ -56,6 +61,7 @@ kubectl get services
 ```
 
 ### 2. Access Services
+
 ```bash
 # Port forward API Gateway
 kubectl port-forward service/api-gateway 8080:8080
@@ -67,11 +73,13 @@ kubectl port-forward service/api-gateway 8080:8080
 ## Testing the System
 
 ### 1. Using Postman
+
 1. Import the collection: `docs/postman-collection.json`
 2. Set base URL to `http://localhost:8080`
 3. Run the health check requests
 
 ### 2. Using curl
+
 ```bash
 # Create a new user
 curl -X POST http://localhost:8080/users/api/v1/users \
@@ -121,10 +129,12 @@ curl -X POST http://localhost:8080/bookings/api/v1/bookings \
 ## Monitoring
 
 ### Access Monitoring Dashboards
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
+
+- **Prometheus**: <http://localhost:9090>
+- **Grafana**: <http://localhost:3000> (admin/admin)
 
 ### Key Metrics to Monitor
+
 - Service health and uptime
 - Response times
 - Database connections
@@ -133,6 +143,7 @@ curl -X POST http://localhost:8080/bookings/api/v1/bookings \
 ## Common Issues
 
 ### Services Not Starting
+
 ```bash
 # Check logs
 docker-compose logs service-name
@@ -144,6 +155,7 @@ docker-compose up -d
 ```
 
 ### Database Connection Issues
+
 ```bash
 # Check PostgreSQL
 docker-compose logs postgres
@@ -154,6 +166,7 @@ docker-compose up -d
 ```
 
 ### Port Conflicts
+
 ```bash
 # Check what's using the port
 netstat -tulpn | grep :8080
@@ -164,6 +177,7 @@ netstat -tulpn | grep :8080
 ## Development
 
 ### Running Services Locally
+
 ```bash
 # Install Go dependencies
 cd services/user-service && go mod tidy
@@ -182,6 +196,7 @@ cd services/notification-service && PORT=8084 go run .
 ```
 
 ### Testing
+
 ```bash
 # Run all tests
 ./scripts/run-tests.sh

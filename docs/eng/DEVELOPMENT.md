@@ -5,6 +5,7 @@ This guide provides instructions for setting up the development environment and 
 ## Prerequisites
 
 ### Required Software
+
 - **Go 1.21+**: [Install Go](https://golang.org/doc/install)
 - **Docker**: [Install Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: [Install Docker Compose](https://docs.docker.com/compose/install/)
@@ -12,6 +13,7 @@ This guide provides instructions for setting up the development environment and 
 - **Git**: [Install Git](https://git-scm.com/downloads)
 
 ### Optional Tools
+
 - **Postman/Insomnia**: For API testing
 - **pgAdmin**: For PostgreSQL database management
 - **Lens**: Kubernetes IDE for cluster management
@@ -19,12 +21,14 @@ This guide provides instructions for setting up the development environment and 
 ## Development Environment Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd SISTEMA_RESERVAS
 ```
 
 ### 2. Set Up Local Dependencies
+
 ```bash
 # Install Go dependencies for all services
 cd services/user-service && go mod tidy && cd ../..
@@ -34,12 +38,14 @@ cd services/notification-service && go mod tidy && cd ../..
 ```
 
 ### 3. Start Infrastructure Services
+
 ```bash
 # Start PostgreSQL, Redis, and monitoring stack
 docker-compose up -d postgres redis prometheus grafana
 ```
 
 ### 4. Initialize Database
+
 ```bash
 # Apply database schema
 docker-compose exec postgres psql -U reservas_user -d reservas_db -f /docker-entrypoint-initdb.d/init.sql
@@ -48,6 +54,7 @@ docker-compose exec postgres psql -U reservas_user -d reservas_db -f /docker-ent
 ## Running Services
 
 ### Option 1: Run Services Natively
+
 ```bash
 # Terminal 1 - User Service
 cd services/user-service
@@ -82,6 +89,7 @@ docker run -p 8080:8080 -v $PWD:/etc/krakend/ devopsfaith/krakend run --config /
 ```
 
 ### Option 2: Run with Docker Compose
+
 ```bash
 # Build and start all services
 docker-compose up --build
@@ -90,6 +98,7 @@ docker-compose up --build
 ## Testing
 
 ### Unit Tests
+
 ```bash
 # Run tests for all services
 ./scripts/run-tests.sh
@@ -102,6 +111,7 @@ cd services/notification-service && go test ./...
 ```
 
 ### Integration Tests
+
 ```bash
 # Start test environment
 docker-compose -f docker-compose.test.yml up -d
@@ -114,6 +124,7 @@ docker-compose -f docker-compose.test.yml down
 ```
 
 ### API Testing
+
 Use the provided Postman collection or curl commands:
 
 ```bash
@@ -132,20 +143,24 @@ curl -X POST http://localhost:8080/users/api/v1/users \
 ## Code Style and Standards
 
 ### Go Code Style
+
 - Follow [Effective Go](https://golang.org/doc/effective_go.html) guidelines
 - Use `gofmt` for formatting
 - Use `golint` for linting
 - Use `go vet` for code analysis
 
 ### Commit Convention
+
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
-```
+
+```Commit
 feat(user-service): add user registration endpoint
 fix(booking-service): resolve double booking issue
 docs(api): update booking endpoints documentation
 ```
 
 ### Code Review Checklist
+
 - [ ] Code follows Go best practices
 - [ ] Tests are included and passing
 - [ ] Documentation is updated
@@ -156,6 +171,7 @@ docs(api): update booking endpoints documentation
 ## Debugging
 
 ### Service Logs
+
 ```bash
 # Docker Compose logs
 docker-compose logs -f user-service
@@ -171,6 +187,7 @@ kubectl logs -f deployment/notification-service
 ```
 
 ### Database Access
+
 ```bash
 # Connect to PostgreSQL
 docker-compose exec postgres psql -U reservas_user -d reservas_db
@@ -182,13 +199,15 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 ```
 
 ### Monitoring
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
+
+- **Prometheus**: <http://localhost:9090>
+- **Grafana**: <http://localhost:3000> (admin/admin)
 - **Application Metrics**: Each service exposes `/metrics` endpoint
 
 ## Adding New Features
 
 ### 1. Service Modifications
+
 1. Update models in `models.go`
 2. Add business logic in `service.go`
 3. Update repository in `repository.go`
@@ -196,16 +215,19 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 5. Update routes in `main.go`
 
 ### 2. Database Changes
+
 1. Create migration script in `infrastructure/database/migrations/`
 2. Update `init.sql` for fresh installations
 3. Test migration on development database
 
 ### 3. API Gateway Updates
+
 1. Update `api-gateway/krakend.json`
 2. Add new routes and backends
 3. Update rate limiting if needed
 
 ### 4. Documentation Updates
+
 1. Update API documentation in `docs/API.md`
 2. Update architecture diagrams if needed
 3. Update deployment guides
@@ -215,6 +237,7 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 ### Common Issues
 
 #### Port Already in Use
+
 ```bash
 # Find process using port
 lsof -i :8081
@@ -223,6 +246,7 @@ kill -9 <PID>
 ```
 
 #### Database Connection Issues
+
 ```bash
 # Check database status
 docker-compose ps postgres
@@ -231,6 +255,7 @@ docker-compose restart postgres
 ```
 
 #### Docker Build Issues
+
 ```bash
 # Clean Docker cache
 docker system prune -f
@@ -239,6 +264,7 @@ docker-compose build --no-cache
 ```
 
 #### Go Module Issues
+
 ```bash
 # Clean module cache
 go clean -modcache
@@ -247,6 +273,7 @@ go mod download
 ```
 
 ### Performance Issues
+
 1. Check service resource usage: `docker stats`
 2. Monitor database connections
 3. Check API Gateway metrics
@@ -255,13 +282,16 @@ go mod download
 ## Continuous Integration
 
 ### GitHub Actions
+
 The project includes CI/CD workflows:
+
 - **Build**: Compiles all services
 - **Test**: Runs unit and integration tests
 - **Security**: Scans for vulnerabilities
 - **Deploy**: Deploys to staging/production
 
 ### Local CI Testing
+
 ```bash
 # Run CI pipeline locally with act (GitHub Actions local runner)
 act push
@@ -270,6 +300,7 @@ act push
 ## Contributing
 
 ### Pull Request Process
+
 1. Create feature branch: `git checkout -b feature/new-feature`
 2. Make changes and add tests
 3. Commit using conventional commit format
@@ -278,7 +309,9 @@ act push
 6. Merge after approval
 
 ### Issue Reporting
+
 When reporting issues, include:
+
 - Service affected
 - Steps to reproduce
 - Expected vs actual behavior
@@ -288,6 +321,7 @@ When reporting issues, include:
 ## Development Tools
 
 ### Recommended VS Code Extensions
+
 - Go extension
 - Docker extension
 - Kubernetes extension
@@ -296,7 +330,9 @@ When reporting issues, include:
 - Thunder Client (API testing)
 
 ### Environment Variables Template
+
 Create `.env` file in each service directory:
+
 ```bash
 # Database
 DB_HOST=localhost

@@ -12,18 +12,20 @@ Microservicio encargado de la gestión de usuarios y autenticación del sistema 
 ## API Endpoints
 
 ### Usuarios
+
 - `POST /api/v1/users` - Crear usuario
 - `GET /api/v1/users/{id}` - Obtener usuario por ID
 - `PUT /api/v1/users/{id}` - Actualizar usuario
 - `DELETE /api/v1/users/{id}` - Eliminar usuario
 
 ### Autenticación
+
 - `POST /api/v1/auth/login` - Iniciar sesión
 - `POST /api/v1/auth/refresh` - Refrescar token
 
 ## Estructura del Proyecto
 
-```
+```Directory
 user-service/
 ├── main.go          # Punto de entrada y configuración del servidor
 ├── handlers.go      # Manejadores HTTP
@@ -38,6 +40,7 @@ user-service/
 ## Configuración
 
 ### Variables de Entorno
+
 ```bash
 PORT=8001
 JWT_SECRET=your-secret-key
@@ -67,6 +70,7 @@ docker run -p 8001:8001 user-service
 ## Ejemplos de Uso
 
 ### Crear Usuario
+
 ```bash
 curl -X POST http://localhost:8001/api/v1/users \
   -H "Content-Type: application/json" \
@@ -79,6 +83,7 @@ curl -X POST http://localhost:8001/api/v1/users \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:8001/api/v1/auth/login \
   -H "Content-Type: application/json" \

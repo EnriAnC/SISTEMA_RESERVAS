@@ -15,6 +15,7 @@ The Notification Service handles all notification delivery across multiple chann
 ## API Endpoints
 
 ### Send Notification
+
 ```http
 POST /notifications
 Content-Type: application/json
@@ -34,11 +35,13 @@ Content-Type: application/json
 ```
 
 ### Get User Notifications
+
 ```http
 GET /notifications?user_id=123&limit=10&offset=0
 ```
 
 Response:
+
 ```json
 {
   "notifications": [
@@ -63,6 +66,7 @@ Response:
 ```
 
 ### Update Notification Status
+
 ```http
 PUT /notifications/{id}/status
 Content-Type: application/json
@@ -73,11 +77,13 @@ Content-Type: application/json
 ```
 
 ### Get Notification Statistics
+
 ```http
 GET /notifications/stats?user_id=123
 ```
 
 Response:
+
 ```json
 {
   "user_id": 123,
@@ -94,6 +100,7 @@ Response:
 ```
 
 ### Health Check
+
 ```http
 GET /health
 ```
@@ -124,11 +131,13 @@ GET /health
 The service listens for events from other microservices:
 
 ### Booking Events
+
 - `booking_confirmed`: Sent when a booking is confirmed
 - `booking_cancelled`: Sent when a booking is cancelled
 - `booking_reminder`: Sent before booking start time
 
 ### User Events
+
 - `user_registered`: Sent when a new user registers
 
 ## Configuration
@@ -158,11 +167,13 @@ APNS_TEAM_ID=your_apple_team_id
 ## Docker Usage
 
 Build the image:
+
 ```bash
 docker build -t notification-service .
 ```
 
 Run the container:
+
 ```bash
 docker run -p 8084:8084 \
   -e PORT=8084 \
@@ -173,16 +184,19 @@ docker run -p 8084:8084 \
 ## Development
 
 Install dependencies:
+
 ```bash
 go mod tidy
 ```
 
 Run the service:
+
 ```bash
 go run .
 ```
 
 Run tests:
+
 ```bash
 go test ./...
 ```

@@ -9,9 +9,11 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-326CE5?style=flat&logo=kubernetes)](https://kubernetes.io)
 
 ## Descripción
+
 Sistema de reservas escalable basado en microservicios desarrollado en Go, diseñado para manejar reservas de recursos con alta disponibilidad y escalabilidad automática.
 
 ## Arquitectura
+
 - **Patrón:** Microservicios
 - **Lenguaje:** Go/Golang
 - **Contenerización:** Docker
@@ -21,13 +23,15 @@ Sistema de reservas escalable basado en microservicios desarrollado en Go, dise�
 - **Mensajería:** RabbitMQ
 
 ## Microservicios
+
 1. **User Service** - Gestión de usuarios y autenticación
 2. **Resource Service** - Gestión de recursos disponibles
 3. **Booking Service** - Lógica principal de reservas
 4. **Notification Service** - Sistema de notificaciones
 
 ## Estructura del Proyecto
-```
+
+```Directory
 SISTEMA_RESERVAS/
 ├── services/               # Microservicios
 │   ├── user-service/
@@ -42,6 +46,7 @@ SISTEMA_RESERVAS/
 ```
 
 ## Inicio Rápido
+
 ```bash
 # Clonar el repositorio
 git clone <repository-url>
@@ -60,15 +65,18 @@ curl http://localhost:8080/users/health
 📖 **[Ver Guía Completa de Inicio Rápido](QUICKSTART.md)**
 
 ## Documentación
+
 - [Arquitectura Técnica](docs/ARCHITECTURE.md)
 - [API Documentation](docs/API.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 
 ## Estado del Proyecto
+
 ✅ **Completado** - Sistema completo con arquitectura de microservicios funcional
 
 ### Características Implementadas
+
 - ✅ 4 Microservicios completamente funcionales (User, Resource, Booking, Notification)
 - ✅ API Gateway con KrakenD configurado
 - ✅ Base de datos PostgreSQL con esquema completo

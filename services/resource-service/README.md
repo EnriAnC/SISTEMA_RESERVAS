@@ -12,6 +12,7 @@ Microservicio encargado de la gestión de recursos disponibles para reservar en 
 ## API Endpoints
 
 ### Recursos
+
 - `POST /api/v1/resources` - Crear recurso
 - `GET /api/v1/resources` - Listar recursos (con filtros)
 - `GET /api/v1/resources/{id}` - Obtener recurso por ID
@@ -19,12 +20,13 @@ Microservicio encargado de la gestión de recursos disponibles para reservar en 
 - `DELETE /api/v1/resources/{id}` - Eliminar recurso (soft delete)
 
 ### Disponibilidad
+
 - `GET /api/v1/resources/{id}/availability` - Consultar disponibilidad
 - `PUT /api/v1/resources/{id}/availability` - Actualizar horarios de disponibilidad
 
 ## Estructura del Proyecto
 
-```
+```Directory
 resource-service/
 ├── main.go          # Punto de entrada y configuración del servidor
 ├── handlers.go      # Manejadores HTTP
@@ -46,6 +48,7 @@ resource-service/
 ## Configuración
 
 ### Variables de Entorno
+
 ```bash
 PORT=8002
 DB_HOST=localhost
@@ -74,6 +77,7 @@ docker run -p 8002:8002 resource-service
 ## Ejemplos de Uso
 
 ### Crear Recurso
+
 ```bash
 curl -X POST http://localhost:8002/api/v1/resources \
   -H "Content-Type: application/json" \
@@ -92,11 +96,13 @@ curl -X POST http://localhost:8002/api/v1/resources \
 ```
 
 ### Listar Recursos con Filtros
+
 ```bash
 curl "http://localhost:8002/api/v1/resources?type=room&min_capacity=10&location=Piso%203"
 ```
 
 ### Configurar Disponibilidad
+
 ```bash
 curl -X PUT http://localhost:8002/api/v1/resources/1/availability \
   -H "Content-Type: application/json" \
@@ -115,6 +121,7 @@ curl -X PUT http://localhost:8002/api/v1/resources/1/availability \
 ```
 
 ### Consultar Disponibilidad
+
 ```bash
 curl "http://localhost:8002/api/v1/resources/1/availability?start_date=2025-06-10&end_date=2025-06-12"
 ```

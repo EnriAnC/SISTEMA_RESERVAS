@@ -13,6 +13,7 @@ Microservicio central encargado de la lógica de negocio para crear, gestionar y
 ## API Endpoints
 
 ### Reservas
+
 - `POST /api/v1/bookings` - Crear reserva
 - `GET /api/v1/bookings` - Listar reservas (con filtros)
 - `GET /api/v1/bookings/{id}` - Obtener reserva por ID
@@ -21,12 +22,13 @@ Microservicio central encargado de la lógica de negocio para crear, gestionar y
 - `POST /api/v1/bookings/{id}/confirm` - Confirmar reserva
 
 ### Consultas Específicas
+
 - `GET /api/v1/users/{user_id}/bookings` - Reservas de un usuario
 - `POST /api/v1/bookings/check-availability` - Verificar disponibilidad
 
 ## Estructura del Proyecto
 
-```
+```Directory
 booking-service/
 ├── main.go          # Punto de entrada y configuración del servidor
 ├── handlers.go      # Manejadores HTTP
@@ -47,7 +49,7 @@ booking-service/
 
 ## Transiciones de Estado Válidas
 
-```
+```Transaction
 PENDING → CONFIRMED
 PENDING → CANCELLED
 CONFIRMED → CANCELLED
@@ -57,6 +59,7 @@ CONFIRMED → COMPLETED
 ## Configuración
 
 ### Variables de Entorno
+
 ```bash
 PORT=8003
 DB_HOST=localhost
@@ -88,6 +91,7 @@ docker run -p 8003:8003 booking-service
 ## Ejemplos de Uso
 
 ### Crear Reserva
+
 ```bash
 curl -X POST http://localhost:8003/api/v1/bookings \
   -H "Content-Type: application/json" \
@@ -101,11 +105,13 @@ curl -X POST http://localhost:8003/api/v1/bookings \
 ```
 
 ### Listar Reservas por Usuario
+
 ```bash
 curl "http://localhost:8003/api/v1/users/1/bookings?status=CONFIRMED&page=1&size=10"
 ```
 
 ### Verificar Disponibilidad
+
 ```bash
 curl -X POST http://localhost:8003/api/v1/bookings/check-availability \
   -H "Content-Type: application/json" \
@@ -117,6 +123,7 @@ curl -X POST http://localhost:8003/api/v1/bookings/check-availability \
 ```
 
 ### Confirmar Reserva
+
 ```bash
 curl -X POST http://localhost:8003/api/v1/bookings/1/confirm \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
@@ -125,12 +132,14 @@ curl -X POST http://localhost:8003/api/v1/bookings/1/confirm \
 ## Lógica de Negocio
 
 ### Validaciones
+
 - No se pueden crear reservas en el pasado
 - La hora de fin debe ser posterior a la hora de inicio
 - No puede haber solapamiento de horarios para el mismo recurso
 - Solo se pueden modificar reservas en estado PENDING o CONFIRMED
 
 ### Eventos Publicados
+
 - `booking.created` - Nueva reserva creada
 - `booking.updated` - Reserva modificada
 - `booking.confirmed` - Reserva confirmada
@@ -139,14 +148,17 @@ curl -X POST http://localhost:8003/api/v1/bookings/1/confirm \
 ## Integración con Otros Servicios
 
 ### User Service
+
 - Validación de tokens JWT
 - Obtención de información de usuario
 
 ### Resource Service  
+
 - Verificación de existencia de recursos
 - Consulta de disponibilidad de recursos
 
 ### Notification Service
+
 - Envío de eventos para notificaciones automáticas
 
 ## Próximos Pasos

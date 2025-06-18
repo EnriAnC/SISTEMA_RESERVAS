@@ -5,6 +5,7 @@ Esta guía proporciona instrucciones para configurar el entorno de desarrollo y 
 ## Prerequisitos
 
 ### Software Requerido
+
 - **Go 1.21+**: [Instalar Go](https://golang.org/doc/install)
 - **Docker**: [Instalar Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: [Instalar Docker Compose](https://docs.docker.com/compose/install/)
@@ -12,6 +13,7 @@ Esta guía proporciona instrucciones para configurar el entorno de desarrollo y 
 - **Git**: [Instalar Git](https://git-scm.com/downloads)
 
 ### Herramientas Opcionales
+
 - **Postman/Insomnia**: Para pruebas de API
 - **pgAdmin**: Para gestión de base de datos PostgreSQL
 - **Lens**: IDE de Kubernetes para gestión de clústeres
@@ -19,12 +21,14 @@ Esta guía proporciona instrucciones para configurar el entorno de desarrollo y 
 ## Configuración del Entorno de Desarrollo
 
 ### 1. Clonar el Repositorio
+
 ```bash
 git clone <url-repositorio>
 cd SISTEMA_RESERVAS
 ```
 
 ### 2. Configurar Dependencias Locales
+
 ```bash
 # Instalar dependencias Go para todos los servicios
 cd services/user-service && go mod tidy && cd ../..
@@ -34,12 +38,14 @@ cd services/notification-service && go mod tidy && cd ../..
 ```
 
 ### 3. Iniciar Servicios de Infraestructura
+
 ```bash
 # Iniciar PostgreSQL, Redis, y stack de monitorización
 docker-compose up -d postgres redis prometheus grafana
 ```
 
 ### 4. Inicializar Base de Datos
+
 ```bash
 # Aplicar esquema de base de datos
 docker-compose exec postgres psql -U reservas_user -d reservas_db -f /docker-entrypoint-initdb.d/init.sql
@@ -48,6 +54,7 @@ docker-compose exec postgres psql -U reservas_user -d reservas_db -f /docker-ent
 ## Ejecutar Servicios
 
 ### Opción 1: Ejecutar Servicios Nativamente
+
 ```bash
 # Terminal 1 - Servicio de Usuarios
 cd services/user-service
@@ -82,6 +89,7 @@ docker run -p 8080:8080 -v $PWD:/etc/krakend/ devopsfaith/krakend run --config /
 ```
 
 ### Opción 2: Ejecutar con Docker Compose
+
 ```bash
 # Construir e iniciar todos los servicios
 docker-compose up --build
@@ -90,6 +98,7 @@ docker-compose up --build
 ## Pruebas
 
 ### Pruebas Unitarias
+
 ```bash
 # Ejecutar pruebas para todos los servicios
 ./scripts/run-tests.sh
@@ -102,6 +111,7 @@ cd services/notification-service && go test ./...
 ```
 
 ### Pruebas de Integración
+
 ```bash
 # Iniciar entorno de pruebas
 docker-compose -f docker-compose.test.yml up -d
@@ -114,6 +124,7 @@ docker-compose -f docker-compose.test.yml down
 ```
 
 ### Pruebas de API
+
 Usar la colección de Postman proporcionada o comandos curl:
 
 ```bash
@@ -132,20 +143,24 @@ curl -X POST http://localhost:8080/users/api/v1/users \
 ## Estilo de Código y Estándares
 
 ### Estilo de Código Go
+
 - Seguir las guías de [Go Efectivo](https://golang.org/doc/effective_go.html)
 - Usar `gofmt` para formateo
 - Usar `golint` para linting
 - Usar `go vet` para análisis de código
 
 ### Convención de Commits
+
 Seguir [Commits Convencionales](https://www.conventionalcommits.org/):
-```
+
+```Commit
 feat(user-service): agregar endpoint de registro de usuario
 fix(booking-service): resolver problema de doble reserva
 docs(api): actualizar documentación de endpoints de reserva
 ```
 
 ### Lista de Verificación de Revisión de Código
+
 - [ ] El código sigue las mejores prácticas de Go
 - [ ] Las pruebas están incluidas y pasan
 - [ ] La documentación está actualizada
@@ -156,6 +171,7 @@ docs(api): actualizar documentación de endpoints de reserva
 ## Depuración
 
 ### Logs de Servicios
+
 ```bash
 # Logs de Docker Compose
 docker-compose logs -f user-service
@@ -171,6 +187,7 @@ kubectl logs -f deployment/notification-service
 ```
 
 ### Acceso a Base de Datos
+
 ```bash
 # Conectar a PostgreSQL
 docker-compose exec postgres psql -U reservas_user -d reservas_db
@@ -182,13 +199,15 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 ```
 
 ### Monitorización
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000 (admin/admin)
+
+- **Prometheus**: <http://localhost:9090>
+- **Grafana**: <http://localhost:3000> (admin/admin)
 - **Métricas de Aplicación**: Cada servicio expone endpoint `/metrics`
 
 ## Agregar Nuevas Funcionalidades
 
 ### 1. Modificaciones de Servicio
+
 1. Actualizar modelos en `models.go`
 2. Agregar lógica de negocio en `service.go`
 3. Actualizar repositorio en `repository.go`
@@ -196,16 +215,19 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 5. Actualizar rutas en `main.go`
 
 ### 2. Cambios de Base de Datos
+
 1. Crear script de migración en `infrastructure/database/migrations/`
 2. Actualizar `init.sql` para instalaciones frescas
 3. Probar migración en base de datos de desarrollo
 
 ### 3. Actualizaciones de API Gateway
+
 1. Actualizar `api-gateway/krakend.json`
 2. Agregar nuevas rutas y backends
 3. Actualizar limitación de velocidad si es necesario
 
 ### 4. Actualizaciones de Documentación
+
 1. Actualizar documentación de API en `docs/API.md`
 2. Actualizar diagramas de arquitectura si es necesario
 3. Actualizar guías de despliegue
@@ -215,6 +237,7 @@ SELECT * FROM bookings WHERE status = 'confirmed';
 ### Problemas Comunes
 
 #### Puerto Ya en Uso
+
 ```bash
 # Encontrar proceso usando puerto
 lsof -i :8081
@@ -223,6 +246,7 @@ kill -9 <PID>
 ```
 
 #### Problemas de Conexión a Base de Datos
+
 ```bash
 # Verificar estado de base de datos
 docker-compose ps postgres
@@ -231,6 +255,7 @@ docker-compose restart postgres
 ```
 
 #### Problemas de Construcción Docker
+
 ```bash
 # Limpiar caché de Docker
 docker system prune -f
@@ -239,6 +264,7 @@ docker-compose build --no-cache
 ```
 
 #### Problemas de Módulos Go
+
 ```bash
 # Limpiar caché de módulos
 go clean -modcache
@@ -247,6 +273,7 @@ go mod download
 ```
 
 ### Problemas de Rendimiento
+
 1. Verificar uso de recursos de servicios: `docker stats`
 2. Monitorizar conexiones de base de datos
 3. Verificar métricas de API Gateway
@@ -255,13 +282,16 @@ go mod download
 ## Integración Continua
 
 ### GitHub Actions
+
 El proyecto incluye flujos de trabajo CI/CD:
+
 - **Build**: Compila todos los servicios
 - **Test**: Ejecuta pruebas unitarias y de integración
 - **Security**: Escanea vulnerabilidades
 - **Deploy**: Despliega a staging/producción
 
 ### Prueba Local de CI
+
 ```bash
 # Ejecutar pipeline CI localmente con act (ejecutor local de GitHub Actions)
 act push
@@ -270,6 +300,7 @@ act push
 ## Contribuir
 
 ### Proceso de Pull Request
+
 1. Crear rama de funcionalidad: `git checkout -b feature/nueva-funcionalidad`
 2. Hacer cambios y agregar pruebas
 3. Hacer commit usando formato de commit convencional
@@ -278,7 +309,9 @@ act push
 6. Hacer merge después de aprobación
 
 ### Reporte de Problemas
+
 Al reportar problemas, incluir:
+
 - Servicio afectado
 - Pasos para reproducir
 - Comportamiento esperado vs real
@@ -288,6 +321,7 @@ Al reportar problemas, incluir:
 ## Herramientas de Desarrollo
 
 ### Extensiones Recomendadas de VS Code
+
 - Extensión Go
 - Extensión Docker
 - Extensión Kubernetes
@@ -296,7 +330,9 @@ Al reportar problemas, incluir:
 - Thunder Client (pruebas de API)
 
 ### Plantilla de Variables de Entorno
+
 Crear archivo `.env` en cada directorio de servicio:
+
 ```bash
 # Base de Datos
 DB_HOST=localhost

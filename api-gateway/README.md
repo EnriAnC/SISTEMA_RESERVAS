@@ -27,6 +27,7 @@ The gateway is configured through `krakend.json` which defines:
 All endpoints are prefixed with `/api/v1`:
 
 ### User Management
+
 - `GET /api/v1/users` - List users
 - `POST /api/v1/users` - Create user
 - `GET /api/v1/users/{id}` - Get user by ID
@@ -35,6 +36,7 @@ All endpoints are prefixed with `/api/v1`:
 - `POST /api/v1/auth/login` - User authentication
 
 ### Resource Management
+
 - `GET /api/v1/resources` - List resources
 - `POST /api/v1/resources` - Create resource
 - `GET /api/v1/resources/{id}` - Get resource by ID
@@ -43,6 +45,7 @@ All endpoints are prefixed with `/api/v1`:
 - `GET /api/v1/resources/{id}/availability` - Check availability
 
 ### Booking Management
+
 - `GET /api/v1/bookings` - List bookings
 - `POST /api/v1/bookings` - Create booking
 - `GET /api/v1/bookings/{id}` - Get booking by ID
@@ -51,12 +54,14 @@ All endpoints are prefixed with `/api/v1`:
 - `PUT /api/v1/bookings/{id}/cancel` - Cancel booking
 
 ### Notification Management
+
 - `GET /api/v1/notifications` - List notifications
 - `POST /api/v1/notifications` - Send notification
 - `PUT /api/v1/notifications/{id}/status` - Update notification status
 - `GET /api/v1/notifications/stats` - Get notification statistics
 
 ### System
+
 - `GET /health` - System health check
 
 ## Service Discovery
@@ -71,12 +76,14 @@ The gateway uses static service discovery with the following service hosts:
 ## Security
 
 ### CORS Configuration
+
 - Allows all origins (configure for production)
 - Supports all HTTP methods
 - Allows common headers (Authorization, Content-Type)
 - Credentials support disabled by default
 
 ### Authentication
+
 - JWT token validation (configured per endpoint)
 - Bearer token support
 - Token forwarding to backend services
@@ -84,6 +91,7 @@ The gateway uses static service discovery with the following service hosts:
 ## Monitoring
 
 ### Metrics
+
 - Endpoint performance metrics
 - Backend response times
 - Error rates and status codes
@@ -91,6 +99,7 @@ The gateway uses static service discovery with the following service hosts:
 - Available on port 8090
 
 ### Logging
+
 - Structured JSON logging
 - Request/response logging
 - Error tracking
@@ -99,11 +108,13 @@ The gateway uses static service discovery with the following service hosts:
 ## Docker Usage
 
 Build the image:
+
 ```bash
 docker build -t api-gateway .
 ```
 
 Run the container:
+
 ```bash
 docker run -p 8080:8080 api-gateway
 ```
@@ -111,11 +122,13 @@ docker run -p 8080:8080 api-gateway
 ## Development
 
 Start KrakenD with configuration:
+
 ```bash
 krakend run -d -c krakend.json
 ```
 
 Validate configuration:
+
 ```bash
 krakend check -d -c krakend.json
 ```
@@ -123,6 +136,7 @@ krakend check -d -c krakend.json
 ## Configuration Examples
 
 ### Adding Authentication
+
 ```json
 {
   "endpoint": "/api/v1/protected-endpoint",
@@ -138,6 +152,7 @@ krakend check -d -c krakend.json
 ```
 
 ### Adding Rate Limiting
+
 ```json
 {
   "endpoint": "/api/v1/limited-endpoint",
@@ -151,6 +166,7 @@ krakend check -d -c krakend.json
 ```
 
 ### Adding Response Caching
+
 ```json
 {
   "endpoint": "/api/v1/cached-endpoint",

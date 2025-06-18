@@ -1,18 +1,23 @@
 # API Documentation - Sistema de Reservas
 
 ## Base URL
-```
+
+```Url
 http://localhost:8080/api/v1
 ```
 
 ## Authentication
+
 Most endpoints require authentication using JWT tokens. Include the token in the Authorization header:
-```
+
+```Header
 Authorization: Bearer <your-jwt-token>
 ```
 
 ## Error Responses
+
 All errors follow a consistent format:
+
 ```json
 {
   "error": "Error message",
@@ -22,6 +27,7 @@ All errors follow a consistent format:
 ```
 
 Common HTTP status codes:
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -35,9 +41,10 @@ Common HTTP status codes:
 
 ## User Management
 
-### Authentication
+### Auth
 
 #### Login
+
 ```http
 POST /auth/login
 Content-Type: application/json
@@ -49,6 +56,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -65,6 +73,7 @@ Content-Type: application/json
 ### User Operations
 
 #### Create User
+
 ```http
 POST /users
 Content-Type: application/json
@@ -80,18 +89,21 @@ Content-Type: application/json
 ```
 
 #### Get All Users
+
 ```http
 GET /users?limit=10&offset=0&role=user
 Authorization: Bearer <token>
 ```
 
 #### Get User by ID
+
 ```http
 GET /users/{id}
 Authorization: Bearer <token>
 ```
 
 #### Update User
+
 ```http
 PUT /users/{id}
 Authorization: Bearer <token>
@@ -104,6 +116,7 @@ Content-Type: application/json
 ```
 
 #### Delete User
+
 ```http
 DELETE /users/{id}
 Authorization: Bearer <token>
@@ -116,11 +129,13 @@ Authorization: Bearer <token>
 ### Resource Operations
 
 #### Get All Resources
+
 ```http
 GET /resources?type=meeting_room&location=Floor1&available=true&limit=10&offset=0
 ```
 
 **Query Parameters:**
+
 - `type` - Filter by resource type
 - `location` - Filter by location
 - `available` - Filter by availability
@@ -130,6 +145,7 @@ GET /resources?type=meeting_room&location=Floor1&available=true&limit=10&offset=
 - `offset` - Pagination offset (default: 0)
 
 **Response:**
+
 ```json
 {
   "resources": [
@@ -157,6 +173,7 @@ GET /resources?type=meeting_room&location=Floor1&available=true&limit=10&offset=
 ```
 
 #### Create Resource
+
 ```http
 POST /resources
 Authorization: Bearer <token>
@@ -177,11 +194,13 @@ Content-Type: application/json
 ```
 
 #### Get Resource by ID
+
 ```http
 GET /resources/{id}
 ```
 
 #### Update Resource
+
 ```http
 PUT /resources/{id}
 Authorization: Bearer <token>
@@ -195,17 +214,20 @@ Content-Type: application/json
 ```
 
 #### Delete Resource
+
 ```http
 DELETE /resources/{id}
 Authorization: Bearer <token>
 ```
 
 #### Check Resource Availability
+
 ```http
 GET /resources/{id}/availability?date=2024-06-10&start_time=09:00&end_time=17:00
 ```
 
 **Response:**
+
 ```json
 {
   "resource_id": 1,
@@ -233,12 +255,14 @@ GET /resources/{id}/availability?date=2024-06-10&start_time=09:00&end_time=17:00
 ### Booking Operations
 
 #### Get All Bookings
+
 ```http
 GET /bookings?user_id=123&resource_id=456&status=confirmed&start_date=2024-06-01&end_date=2024-06-30&limit=10&offset=0
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `user_id` - Filter by user
 - `resource_id` - Filter by resource
 - `status` - Filter by status (pending, confirmed, cancelled, completed)
@@ -248,6 +272,7 @@ Authorization: Bearer <token>
 - `offset` - Pagination offset
 
 #### Create Booking
+
 ```http
 POST /bookings
 Authorization: Bearer <token>
@@ -262,6 +287,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "id": 123,
@@ -277,12 +303,14 @@ Content-Type: application/json
 ```
 
 #### Get Booking by ID
+
 ```http
 GET /bookings/{id}
 Authorization: Bearer <token>
 ```
 
 #### Update Booking
+
 ```http
 PUT /bookings/{id}
 Authorization: Bearer <token>
@@ -296,6 +324,7 @@ Content-Type: application/json
 ```
 
 #### Cancel Booking
+
 ```http
 PUT /bookings/{id}/cancel
 Authorization: Bearer <token>
@@ -307,6 +336,7 @@ Content-Type: application/json
 ```
 
 #### Delete Booking
+
 ```http
 DELETE /bookings/{id}
 Authorization: Bearer <token>
@@ -319,6 +349,7 @@ Authorization: Bearer <token>
 ### Notification Operations
 
 #### Send Notification
+
 ```http
 POST /notifications
 Authorization: Bearer <token>
@@ -339,12 +370,14 @@ Content-Type: application/json
 ```
 
 #### Get User Notifications
+
 ```http
 GET /notifications?user_id=123&type=booking&is_read=false&limit=10&offset=0
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "notifications": [
@@ -369,6 +402,7 @@ Authorization: Bearer <token>
 ```
 
 #### Update Notification Status
+
 ```http
 PUT /notifications/{id}/status
 Authorization: Bearer <token>
@@ -380,12 +414,14 @@ Content-Type: application/json
 ```
 
 #### Get Notification Statistics
+
 ```http
 GET /notifications/stats?user_id=123
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "user_id": 123,
@@ -406,11 +442,13 @@ Authorization: Bearer <token>
 ## System Endpoints
 
 ### Health Check
+
 ```http
 GET /health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -429,6 +467,7 @@ GET /health
 ## Data Models
 
 ### User Model
+
 ```json
 {
   "id": 1,
@@ -445,6 +484,7 @@ GET /health
 ```
 
 ### Resource Model
+
 ```json
 {
   "id": 1,
@@ -466,6 +506,7 @@ GET /health
 ```
 
 ### Booking Model
+
 ```json
 {
   "id": 123,
@@ -485,6 +526,7 @@ GET /health
 ```
 
 ### Notification Model
+
 ```json
 {
   "id": 1,
@@ -512,16 +554,19 @@ GET /health
 The system publishes events for external integration:
 
 ### Booking Events
+
 - `booking.created` - New booking created
 - `booking.confirmed` - Booking confirmed
 - `booking.cancelled` - Booking cancelled
 - `booking.updated` - Booking modified
 
 ### User Events
+
 - `user.registered` - New user registered
 - `user.updated` - User information updated
 
 ### Event Payload Example
+
 ```json
 {
   "event": "booking.confirmed",
@@ -549,7 +594,8 @@ API endpoints are rate limited to prevent abuse:
 - **Notification endpoints**: 100 requests per hour per user
 
 Rate limit headers are included in responses:
-```
+
+```Header
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1623456789
@@ -560,6 +606,7 @@ X-RateLimit-Reset: 1623456789
 ## SDK and Examples
 
 ### JavaScript/Node.js Example
+
 ```javascript
 const axios = require('axios');
 
@@ -590,6 +637,7 @@ const bookingResponse = await axios.post(
 ```
 
 ### cURL Examples
+
 ```bash
 # Login
 curl -X POST http://localhost:8080/api/v1/auth/login \
