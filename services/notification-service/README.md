@@ -1,6 +1,8 @@
 # Notification Service
 
-The Notification Service handles all notification delivery across multiple channels including email, SMS, push notifications, and webhooks. It processes events from other services and manages notification preferences and delivery status.
+The Notification Service handles all notification delivery across multiple channels including email, SMS,
+push notifications, and webhooks. It processes events from other services and manages notification preferences
+and delivery status.
 
 ## Features
 
