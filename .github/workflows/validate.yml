@@ -155,14 +155,29 @@ jobs:
     # Validar sintaxis de Docker Compose con docker-compose
     - name: 🐳 Validar sintaxis Docker Compose
       run: |
+        set -eo pipefail # Añade esto para un mejor manejo de errores en scripts
+        
         if [ -f "infrastructure/docker-compose.yml" ]; then
-          echo "🔍 Validando sintaxis de Docker Compose..."
+          echo "🔍 Validando sintaxis de Docker Compose en infrastructure/docker-compose.yml..."
           cd infrastructure
-          if docker-compose config > /dev/null 2>&1; then
+          # Usa 'docker compose' (sin guion) que es la forma moderna
+          if docker compose config > /dev/null 2>&1; then # <--- CAMBIO AQUÍ: docker compose en vez de docker-compose
             echo "✅ docker-compose.yml tiene sintaxis válida"
           else
-            echo "❌ docker-compose.yml tiene errores de sintaxis"
-            docker-compose config
+            echo "❌ docker-compose.yml tiene errores de sintaxis Docker Compose"
+            docker compose config # Muestra los errores de configuración
+            exit 1
+          fi
+          cd .. # Vuelve al directorio raíz
+        fi
+        
+        if [ -f "docker-compose.yml" ]; then # Si tienes un docker-compose.yml en la raíz también
+          echo "🔍 Validando sintaxis de Docker Compose en docker-compose.yml..."
+          if docker compose config > /dev/null 2>&1; then # <--- CAMBIO AQUÍ
+            echo "✅ docker-compose.yml tiene sintaxis válida"
+          else
+            echo "❌ docker-compose.yml tiene errores de sintaxis Docker Compose"
+            docker compose config
             exit 1
           fi
         fi
