@@ -132,4 +132,5 @@ Cuando el proyecto madure, se pueden agregar:
 
 ---
 
-*Esta configuración de GitHub Actions está diseñada para evolucionar con el proyecto, manteniendo alta calidad de código desde el inicio.*
+*Esta configuración de GitHub Actions está diseñada para evolucionar con el proyecto,  
+manteniendo alta calidad de código desde el inicio.*
