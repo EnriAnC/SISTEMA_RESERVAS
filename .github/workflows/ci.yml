@@ -277,11 +277,10 @@ jobs:
     - name: 🔍 Ejecutar Gosec Security Scanner
       if: steps.should-run.outputs.run == 'true'
       uses: securego/gosec@master
-      working-directory: ./services/${{ matrix.service }}
       with:
         version: v2.20.0
-        go-path: .
-        flags: '-fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
+        go-path: ./services/${{ matrix.service }}
+        flags: '-fmt sarif -out ./services/${{ matrix.service }}/gosec-${{ matrix.service }}.sarif ./...'
 
     - name: 📊 Upload SARIF file
       if: steps.should-run.outputs.run == 'true'
