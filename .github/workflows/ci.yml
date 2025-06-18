@@ -276,21 +276,23 @@ jobs:
         
     - name: 🔍 Ejecutar Gosec Security Scanner
       if: steps.should-run.outputs.run == 'true'
-      uses: securego/gosec@master
+      # CAMBIO CLAVE AQUÍ: Usar securego/gosec-action
+      uses: securego/gosec-action@v2 # Usar la versión recomendada (v2 es la actual estable)
       with:
-        # 'version' aquí especifica qué VERSIÓN de la herramienta 'gosec' (de securego/gosec)
-        # quieres que la acción de Secure Code Warrior instale y use.
-        version: v2.20.0 # Revisa https://github.com/securego/gosec/releases para la última estable
-        # 'go-path' o 'scan-path' le dice a la ACCIÓN dónde encontrar el código Go a escanear.
-        go-path: ./services/${{ matrix.service }}
+        # El parámetro para la ruta de tu código Go es 'path'
+        path: ./services/${{ matrix.service }}
         # 'flags' son los argumentos que la acción pasará directamente a la herramienta gosec.
-        flags: '-fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
-
+        # No necesitas especificar 'go-path' o 'scan-path' aquí, la acción lo maneja.
+        # El archivo SARIF se generará dentro de la carpeta especificada por 'path'.
+        flags: '-fmt sarif -out gosec-${{ matrix.service }}.sarif' 
+        # La acción 'securego/gosec-action' ya instala la herramienta gosec,
+        # así que no necesitas un parámetro 'version' para la herramienta gosec aquí.
         
     - name: 📊 Upload SARIF file
       if: steps.should-run.outputs.run == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
+        # La ruta del archivo SARIF debe ser relativa al workspace, incluyendo la carpeta del servicio.
         sarif_file: ./services/${{ matrix.service }}/gosec-${{ matrix.service }}.sarif
         category: gosec-${{ matrix.service }}
       
