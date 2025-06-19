@@ -278,8 +278,6 @@ jobs:
       if: steps.should-run.outputs.run == 'true'
       uses: securego/gosec@master
       with:
-        version: v2.20.0
-        go-path: ./services/${{ matrix.service }}
         flags: '-no-fail -fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
 
 
@@ -297,7 +295,7 @@ jobs:
       if: steps.should-run.outputs.run == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: ./gosec-${{ matrix.service }}.sarif
+        sarif_file: gosec-${{ matrix.service }}.sarif
         category: gosec-${{ matrix.service }}
       
     - name: 📊 Instalar y ejecutar govulncheck
