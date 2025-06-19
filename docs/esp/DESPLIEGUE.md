@@ -30,7 +30,7 @@ y Kubernetes para entornos de producción.
 #### Herramientas de Desarrollo
 
 - Git
-- Go 1.21+ (para desarrollo local)
+- Go 1.24.4+ (para desarrollo local)
 - curl o Postman (para pruebas de API)
 
 ---

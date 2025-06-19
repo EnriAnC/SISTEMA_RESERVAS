@@ -7,7 +7,7 @@ y contribuir al proyecto Sistema de Reservas.
 
 ### Software Requerido
 
-- **Go 1.21+**: [Instalar Go](https://golang.org/doc/install)
+- **Go 1.24.4+**: [Instalar Go](https://golang.org/doc/install)
 - **Docker**: [Instalar Docker](https://docs.docker.com/get-docker/)
 - **Docker Compose**: [Instalar Docker Compose](https://docs.docker.com/compose/install/)
 - **kubectl**: [Instalar kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)

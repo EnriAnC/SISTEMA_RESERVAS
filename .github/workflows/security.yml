@@ -28,6 +28,7 @@ env:
   TRIVY_VERSION: '0.48.3'
   CHECKOV_VERSION: '3.1.0'
   TRUFFLEHOG_VERSION: '3.63.2'
+  GO_VERSION: '1.24.4'
 
 # Permisos necesarios para análisis completo
 permissions:

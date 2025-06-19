@@ -11,8 +11,8 @@ on:
 
 # Variables de entorno globales
 env:
-  GO_VERSION: '1.21'
-  GOLANGCI_LINT_VERSION: v1.55.2
+  GO_VERSION: '1.24.4'
+  GOLANGCI_LINT_VERSION: v1.62.0
 
 # Permisos mínimos requeridos
 permissions:
@@ -66,10 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.services == 'true'
-    
-    strategy:
+      strategy:
       matrix:
-        go-version: ['1.21', '1.22']
+        go-version: ['1.23', '1.24']
       fail-fast: false
     
     steps:
@@ -120,11 +119,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-changes, setup-validation]
     if: needs.detect-changes.outputs.services == 'true'
-    
-    strategy:
+      strategy:
       matrix:
         service: [user-service, resource-service, booking-service, notification-service]
-        go-version: ['1.21']
+        go-version: ['1.24']
       fail-fast: false
     
     steps:
@@ -299,9 +297,9 @@ jobs:
         echo "🔍 Ejecutando govulncheck en ${{ matrix.service }}..."
         govulncheck ./...
       continue-on-error: true
-    
+      
     - name: 🔐 Detección básica de secretos
-      zif: steps.should-run.outputs.run == 'true'
+      if: steps.should-run.outputs.run == 'true'
       working-directory: ./services/${{ matrix.service }}
       run: |
         echo "🔐 Verificando patrones de secretos básicos en ${{ matrix.service }}..."
@@ -331,6 +329,27 @@ jobs:
         else
           echo "⚠️ Se encontraron $secret_issues posibles problemas de secretos en ${{ matrix.service }}"
         fi
+    
+    - name: 🔍 Detección avanzada de secretos con TruffleHog
+      if: steps.should-run.outputs.run == 'true'
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🔧 Instalando TruffleHog..."
+        curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+        
+        echo "🔍 Escaneando secretos con TruffleHog en ${{ matrix.service }}..."
+        trufflehog filesystem . --json --only-verified --output trufflehog-${{ matrix.service }}.json || true
+        
+        if [ -f trufflehog-${{ matrix.service }}.json ]; then
+          secrets_count=$(cat trufflehog-${{ matrix.service }}.json | jq -s 'length' 2>/dev/null || echo "0")
+          echo "📊 Secretos verificados encontrados en ${{ matrix.service }}: $secrets_count"
+          
+          if [ "$secrets_count" -gt 0 ]; then
+            echo "🚨 SECRETOS VERIFICADOS ENCONTRADOS en ${{ matrix.service }}:"
+            cat trufflehog-${{ matrix.service }}.json | jq -r '.DetectorName + ": " + .SourceMetadata.Data.Filesystem.file' 2>/dev/null || true
+          fi
+        fi
+      continue-on-error: true
 
 
   # Job 6: Verificación de estructura del proyecto

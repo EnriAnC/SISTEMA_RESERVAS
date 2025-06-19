@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24.4-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o user-service .
 
 # Use a minimal base image
-FROM alpine:3.19
+FROM alpine:3.22
 
 # Install ca-certificates for HTTPS
 RUN apk --no-cache add ca-certificates

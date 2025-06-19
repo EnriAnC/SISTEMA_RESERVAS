@@ -30,7 +30,7 @@ for development/testing and Kubernetes for production environments.
 #### Development Tools
 
 - Git
-- Go 1.21+ (for local development)
+- Go 1.24.4+ (for local development)
 - curl or Postman (for API testing)
 
 ---
