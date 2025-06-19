@@ -249,6 +249,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect-changes]
     if: needs.detect-changes.outputs.services == 'true' || github.event_name == 'push' || needs.detect-changes.outputs.workflows == 'true'
+    permissions:
+      contents: read # Permite que actions/checkout lea el código
+      security-events: write # Permite subir los resultados de seguridad a Code Scanning
     
     strategy:
       matrix:
