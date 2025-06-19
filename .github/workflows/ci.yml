@@ -278,7 +278,7 @@ jobs:
       if: steps.should-run.outputs.run == 'true'
       uses: securego/gosec@master
       with:
-        flags: '-no-fail -fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
+        args: '-no-fail -fmt sarif -out gosec-${{ matrix.service }}.sarif ./...'
 
 
     - name: 🕵️‍♀️ Debug-> Listar archivos SARIF generados (SIEMPRE EJECUTAR ESTO PARA DEPURAR)
