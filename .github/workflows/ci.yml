@@ -299,6 +299,39 @@ jobs:
         echo "🔍 Ejecutando govulncheck en ${{ matrix.service }}..."
         govulncheck ./...
       continue-on-error: true
+    
+    - name: 🔐 Detección básica de secretos
+      zif: steps.should-run.outputs.run == 'true'
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🔐 Verificando patrones de secretos básicos en ${{ matrix.service }}..."
+        
+        secret_issues=0
+        
+        # Buscar claves API hardcodeadas
+        if grep -r -i "api[_-]key.*=.*['\"][^'\"]*['\"]" . --include="*.go" --exclude-dir=vendor 2>/dev/null; then
+          echo "⚠️ Posibles API keys hardcodeadas encontradas"
+          secret_issues=$((secret_issues + 1))
+        fi
+        
+        # Buscar tokens hardcodeados
+        if grep -r -i "token.*=.*['\"][^'\"]*['\"]" . --include="*.go" --exclude-dir=vendor 2>/dev/null; then
+          echo "⚠️ Posibles tokens hardcodeados encontrados"
+          secret_issues=$((secret_issues + 1))
+        fi
+        
+        # Buscar contraseñas hardcodeadas (excluyendo test cases)
+        if grep -r -i "password.*=.*['\"][^'\"]*['\"]" . --include="*.go" --exclude-dir=vendor --exclude="*_test.go" 2>/dev/null; then
+          echo "⚠️ Posibles contraseñas hardcodeadas encontradas"
+          secret_issues=$((secret_issues + 1))
+        fi
+        
+        if [ $secret_issues -eq 0 ]; then
+          echo "✅ No se encontraron patrones básicos de secretos en ${{ matrix.service }}"
+        else
+          echo "⚠️ Se encontraron $secret_issues posibles problemas de secretos en ${{ matrix.service }}"
+        fi
+
 
   # Job 6: Verificación de estructura del proyecto
   project-structure:

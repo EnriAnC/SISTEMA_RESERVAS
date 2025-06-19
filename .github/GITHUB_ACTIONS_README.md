@@ -29,17 +29,20 @@ Este proyecto utiliza GitHub Actions para automatizar la validación, construcci
 
 **Triggers:** Push y Pull Request a `main` y `develop`
 
-### 3. Security Analysis (`security.yml`)
+### 3. Security Analysis Deep Scan (`security.yml`)
 
-**Propósito:** Análisis de seguridad del código
+**Propósito:** Análisis de seguridad profundo y reportes consolidados
 
-- ✅ Vulnerabilidades en código Go (`gosec`)
-- ✅ Dependencias vulnerables (`govulncheck`)
-- ✅ Detección de secretos (`truffleHog`)
-- ✅ Configuraciones de seguridad
-- ✅ Reporte de seguridad
+- ✅ Análisis de contenedores Docker (`Trivy`)
+- ✅ Infraestructura como código (`Checkov`)
+- ✅ Detección avanzada de secretos (`TruffleHog`)
+- ✅ Análisis de cadena de suministro
+- ✅ Reportes consolidados con recomendaciones
+- ✅ Comentarios automáticos en PRs
 
-**Triggers:** Push, Pull Request y schedule semanal
+**Triggers:** Push a main (cambios críticos), schedule semanal y ejecución manual
+
+**Nota:** El análisis básico de seguridad (gosec, govulncheck) se ejecuta en CI para feedback inmediato
 
 ## 📊 Badges de Estado
 
@@ -114,10 +117,12 @@ Configuración en `.golangci.yml`:
 
 ### Security Pipeline falla
 
-1. Revisar alertas de `gosec`
-2. Actualizar dependencias vulnerables
-3. Remover secretos hardcodeados
-4. Revisar configuraciones de seguridad
+1. **Análisis básico (CI):** Revisar alertas de `gosec` y `govulncheck`
+2. **Análisis profundo (Security):** Verificar reportes de Trivy, Checkov y TruffleHog
+3. Actualizar dependencias vulnerables
+4. Corregir configuraciones inseguras identificadas
+5. Rotar secretos comprometidos identificados
+6. Revisar GitHub Security tab para alertas adicionales
 
 ## 📈 Mejoras Futuras
 
@@ -129,6 +134,8 @@ Cuando el proyecto madure, se pueden agregar:
 - Análisis de cobertura de código
 - Notificaciones de Slack/Teams
 - Integración con herramientas de monitoreo
+- Políticas de seguridad automatizadas (OPA/Gatekeeper)
+- Análisis de performance y carga
 
 ---
 

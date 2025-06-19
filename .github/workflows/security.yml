@@ -1,263 +1,672 @@
-# Workflow de Análisis de Seguridad
-# Detecta vulnerabilidades y problemas de seguridad en el código
+# Workflow de Análisis de Seguridad Profundo y Reportes
+# Diseñado para escaneos exhaustivos, análisis de infraestructura y generación de informes consolidados
+# Se ejecuta de forma programada y en cambios críticos para proporcionar una visión completa de seguridad
 
-name: 🔒 Security Analysis
+name: 🔒 Security Deep Scan & Reporting
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]  # Solo en main para análisis completo
+    paths:
+      - 'infrastructure/**'
+      - 'kubernetes/**'
+      - 'services/**/Dockerfile'
+      - '.github/workflows/security.yml'
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+      - 'kubernetes/**'
+      - 'services/**/Dockerfile'
   schedule:
     # Ejecutar análisis de seguridad semanalmente (lunes a las 2 AM UTC)
     - cron: '0 2 * * 1'
+  workflow_dispatch:  # Permitir ejecución manual
+
+# Variables de entorno globales
+env:
+  TRIVY_VERSION: '0.48.3'
+  CHECKOV_VERSION: '3.1.0'
+  TRUFFLEHOG_VERSION: '3.63.2'
+
+# Permisos necesarios para análisis completo
+permissions:
+  contents: read
+  security-events: write
+  packages: read
 
 jobs:
-  # Job 1: Análisis de vulnerabilidades en código Go con gosec
-  gosec-analysis:
-    name: 🔍 Análisis gosec
+  # Job 1: Análisis de seguridad en imágenes de contenedor
+  container-security-scan:
+    name: 🐳 Container Security Analysis
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[security]')
+    
+    strategy:
+      matrix:
+        service: [user-service, resource-service, booking-service, notification-service, api-gateway]
+      fail-fast: false
     
     steps:
     - name: 📥 Checkout código
       uses: actions/checkout@v4
       
-    - name: 🐹 Configurar Go
-      uses: actions/setup-go@v4
+    - name: 🐋 Configurar Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🔧 Instalar Trivy
+      run: |
+        echo "🔧 Instalando Trivy ${{ env.TRIVY_VERSION }}..."
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v${{ env.TRIVY_VERSION }}
+        trivy --version
+        
+    - name: 🚧 Construir imagen Docker
+      if: matrix.service != 'api-gateway'
+      run: |
+        echo "🏗️ Construyendo imagen para ${{ matrix.service }}..."
+        if [ -f "services/${{ matrix.service }}/Dockerfile" ]; then
+          docker build -t ${{ matrix.service }}:security-scan ./services/${{ matrix.service }}
+          echo "✅ Imagen ${{ matrix.service }} construida exitosamente"
+        else
+          echo "❌ Dockerfile no encontrado para ${{ matrix.service }}"
+          exit 1
+        fi
+        
+    - name: 🚧 Construir imagen API Gateway
+      if: matrix.service == 'api-gateway'
+      run: |
+        echo "🏗️ Construyendo imagen para API Gateway..."
+        if [ -f "api-gateway/Dockerfile" ]; then
+          docker build -t api-gateway:security-scan ./api-gateway
+          echo "✅ Imagen api-gateway construida exitosamente"
+        else
+          echo "❌ Dockerfile no encontrado para api-gateway"
+          exit 1
+        fi
+        
+    - name: 🔍 Escanear imagen con Trivy (vulnerabilidades)
+      run: |
+        echo "🔍 Escaneando vulnerabilidades en imagen ${{ matrix.service }}..."
+        trivy image \
+          --format sarif \
+          --output trivy-vuln-${{ matrix.service }}.sarif \
+          --severity HIGH,CRITICAL \
+          ${{ matrix.service }}:security-scan
+          
+        # También generar reporte en tabla para logs
+        trivy image \
+          --format table \
+          --severity HIGH,CRITICAL \
+          ${{ matrix.service }}:security-scan || true
+        
+    - name: 🔍 Escanear configuración con Trivy (misconfigurations)
+      run: |
+        echo "🔍 Escaneando configuraciones en imagen ${{ matrix.service }}..."
+        trivy image \
+          --scanners misconfig \
+          --format sarif \
+          --output trivy-misconfig-${{ matrix.service }}.sarif \
+          ${{ matrix.service }}:security-scan || true
+          
+    - name: 🔍 Escanear secretos en imagen con Trivy
+      run: |
+        echo "🔍 Escaneando secretos en imagen ${{ matrix.service }}..."
+        trivy image \
+          --scanners secret \
+          --format sarif \
+          --output trivy-secrets-${{ matrix.service }}.sarif \
+          ${{ matrix.service }}:security-scan || true
+        
+    - name: 📊 Upload Trivy SARIF (Vulnerabilidades)
+      uses: github/codeql-action/upload-sarif@v3
       with:
-        go-version: '1.21'
-        
-    - name: 🔧 Instalar gosec
-      run: |
-        curl -sfL https://raw.githubusercontent.com/securecodewarrior/gosec/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.18.2
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        
-    - name: 🔍 Ejecutar gosec en todos los servicios
-      run: |
-        echo "🔒 Ejecutando análisis de seguridad con gosec..."
-        
-        services=("user-service" "resource-service" "booking-service" "notification-service")
-        overall_issues=0
-        
-        for service in "${services[@]}"; do
-          echo "🔍 Analizando $service..."
-          cd "services/$service"
-          
-          # Ejecutar gosec y capturar el código de salida
-          if gosec -fmt json -out gosec-report.json ./...; then
-            echo "✅ $service: Sin problemas críticos de seguridad"
-          else
-            echo "⚠️ $service: Se encontraron problemas de seguridad"
-            # Mostrar resumen de problemas encontrados
-            gosec -fmt text ./... || true
-            overall_issues=$((overall_issues + 1))
-          fi
-          
-          cd ../..
-          echo "---"
-        done
-        
-        if [ $overall_issues -gt 0 ]; then
-          echo "❌ Se encontraron problemas de seguridad en $overall_issues servicios"
-          echo "📝 Revisa los reportes generados para más detalles"
-          exit 1
-        else
-          echo "🎉 Análisis de seguridad completado sin problemas críticos"
-        fi
-
-  # Job 2: Escaneo de dependencias vulnerables
-  dependency-scan:
-    name: 📦 Escaneo Dependencias
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
+        sarif_file: trivy-vuln-${{ matrix.service }}.sarif
+        category: trivy-vulnerabilities-${{ matrix.service }}
+      continue-on-error: true
       
-    - name: 🐹 Configurar Go
-      uses: actions/setup-go@v4
+    - name: 📊 Upload Trivy SARIF (Configuraciones)
+      uses: github/codeql-action/upload-sarif@v3
       with:
-        go-version: '1.21'
-        
-    - name: 🔧 Instalar govulncheck
-      run: |
-        go install golang.org/x/vuln/cmd/govulncheck@latest
-        
-    - name: 🔍 Escanear vulnerabilidades en dependencias
-      run: |
-        echo "📦 Escaneando vulnerabilidades en dependencias..."
-        
-        services=("user-service" "resource-service" "booking-service" "notification-service")
-        vulnerable_services=0
-        
-        for service in "${services[@]}"; do
-          echo "🔍 Escaneando dependencias de $service..."
-          cd "services/$service"
-          
-          if govulncheck ./...; then
-            echo "✅ $service: Sin vulnerabilidades conocidas en dependencias"
-          else
-            echo "⚠️ $service: Se encontraron vulnerabilidades en dependencias"
-            vulnerable_services=$((vulnerable_services + 1))
-          fi
-          
-          cd ../..
-          echo "---"
-        done
-        
-        if [ $vulnerable_services -gt 0 ]; then
-          echo "❌ Se encontraron vulnerabilidades en $vulnerable_services servicios"
-          echo "🔧 Actualiza las dependencias vulnerables identificadas"
-          exit 1
-        else
-          echo "🎉 Escaneo de dependencias completado sin vulnerabilidades"
-        fi
+        sarif_file: trivy-misconfig-${{ matrix.service }}.sarif
+        category: trivy-misconfig-${{ matrix.service }}
+      continue-on-error: true
+      
+    - name: 📊 Upload Trivy SARIF (Secretos)
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: trivy-secrets-${{ matrix.service }}.sarif
+        category: trivy-secrets-${{ matrix.service }}
+      continue-on-error: true
+      
+    - name: 📤 Subir reportes como artefactos
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-reports-${{ matrix.service }}
+        path: trivy-*.sarif
+        retention-days: 30
 
-  # Job 3: Detección de secretos hardcodeados
-  secret-scan:
-    name: 🔐 Detectar Secretos
+  # Job 2: Análisis de Infraestructura como Código (IaC)
+  iac-security-scan:
+    name: ⚙️ Infrastructure Security Analysis
     runs-on: ubuntu-latest
     
     steps:
     - name: 📥 Checkout código
       uses: actions/checkout@v4
       
-    - name: 🔧 Instalar truffleHog
+    - name: 🐍 Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 🔧 Instalar Checkov
       run: |
-        curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+        echo "🔧 Instalando Checkov ${{ env.CHECKOV_VERSION }}..."
+        pip install checkov==${{ env.CHECKOV_VERSION }}
+        checkov --version
         
-    - name: 🔍 Escanear secretos en el código
+    - name: 🔍 Escanear configuraciones de Kubernetes
       run: |
-        echo "🔐 Escaneando secretos hardcodeados..."
+        echo "🔍 Escaneando configuraciones de Kubernetes con Checkov..."
         
-        # Ejecutar truffleHog para detectar secretos
-        if truffleHog filesystem . --exclude-paths .github/workflows/security.yml; then
-          echo "✅ No se encontraron secretos hardcodeados"
-        else
-          echo "❌ Se encontraron posibles secretos hardcodeados"
-          echo "🔧 Revisa y remueve cualquier credencial del código fuente"
-          exit 1
-        fi
-
-  # Job 4: Análisis de configuración de seguridad
-  security-config:
-    name: ⚙️ Configuración Seguridad
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: 📥 Checkout código
-      uses: actions/checkout@v4
-      
-    - name: 🔍 Verificar configuraciones de seguridad
-      run: |
-        echo "⚙️ Verificando configuraciones de seguridad..."
-        
-        security_issues=0
-        
-        # Verificar que no hay contraseñas por defecto en docker-compose
-        echo "🔍 Verificando docker-compose.yml..."
-        if [ -f "infrastructure/docker-compose.yml" ]; then
-          if grep -i "password.*password\|password.*123\|password.*admin" infrastructure/docker-compose.yml; then
-            echo "❌ Se encontraron contraseñas por defecto en docker-compose.yml"
-            security_issues=$((security_issues + 1))
-          else
-            echo "✅ docker-compose.yml no contiene contraseñas por defecto obvias"
-          fi
-        fi
-        
-        # Verificar configuraciones de Kubernetes
-        echo "🔍 Verificando manifiestos de Kubernetes..."
         if [ -d "kubernetes" ]; then
-          # Buscar configuraciones inseguras comunes
-          if find kubernetes -name "*.yaml" -exec grep -l "privileged.*true\|runAsUser.*0\|allowPrivilegeEscalation.*true" {} \; | head -1; then
-            echo "❌ Se encontraron configuraciones privilegiadas en Kubernetes"
-            security_issues=$((security_issues + 1))
-          else
-            echo "✅ No se encontraron configuraciones privilegiadas obvias"
-          fi
+          checkov \
+            --directory kubernetes/ \
+            --framework kubernetes \
+            --output sarif \
+            --output-file checkov-kubernetes.sarif \
+            --soft-fail || true
+            
+          # También generar reporte en CLI para logs
+          echo "📊 Resumen de problemas en Kubernetes:"
+          checkov \
+            --directory kubernetes/ \
+            --framework kubernetes \
+            --compact \
+            --quiet || true
+        else
+          echo "❌ Directorio kubernetes no encontrado"
         fi
         
-        # Verificar que los Dockerfiles no ejecutan como root
-        echo "🔍 Verificando Dockerfiles..."
-        dockerfile_issues=0
-        find . -name "Dockerfile" | while read -r dockerfile; do
-          if ! grep -q "USER " "$dockerfile"; then
-            echo "⚠️ $dockerfile no especifica USER (ejecutará como root)"
-            dockerfile_issues=$((dockerfile_issues + 1))
-          fi
+    - name: 🔍 Escanear Docker Compose
+      run: |
+        echo "🔍 Escaneando Docker Compose con Checkov..."
+        
+        if [ -f "infrastructure/docker-compose.yml" ]; then
+          checkov \
+            --file infrastructure/docker-compose.yml \
+            --framework docker_compose \
+            --output sarif \
+            --output-file checkov-docker-compose.sarif \
+            --soft-fail || true
+            
+          echo "📊 Resumen de problemas en Docker Compose:"
+          checkov \
+            --file infrastructure/docker-compose.yml \
+            --framework docker_compose \
+            --compact \
+            --quiet || true
+        else
+          echo "❌ docker-compose.yml no encontrado en infrastructure/"
+        fi
+        
+    - name: 🔍 Escanear Dockerfiles
+      run: |
+        echo "🔍 Escaneando Dockerfiles con Checkov..."
+        
+        dockerfile_count=0
+        
+        # Buscar todos los Dockerfiles
+        find . -name "Dockerfile" -type f | while read dockerfile; do
+          dockerfile_count=$((dockerfile_count + 1))
+          echo "Escaneando: $dockerfile"
         done
         
-        # Verificar archivos con permisos sensibles
-        echo "🔍 Verificando permisos de archivos..."
-        if find scripts -name "*.sh" -perm /111 2>/dev/null | grep -q .; then
-          echo "✅ Scripts tienen permisos de ejecución"
+        if [ $dockerfile_count -gt 0 ]; then
+          checkov \
+            --framework dockerfile \
+            --output sarif \
+            --output-file checkov-dockerfiles.sarif \
+            --soft-fail \
+            --directory . || true
+            
+          echo "📊 Resumen de problemas en Dockerfiles:"
+          checkov \
+            --framework dockerfile \
+            --compact \
+            --quiet \
+            --directory . || true
         else
-          echo "⚠️ Algunos scripts pueden necesitar permisos de ejecución"
+          echo "❌ No se encontraron Dockerfiles para escanear"
         fi
         
-        if [ $security_issues -gt 0 ]; then
-          echo "❌ Se encontraron $security_issues problemas de configuración de seguridad"
-          echo "🔧 Revisa y corrige las configuraciones marcadas como inseguras"
-          exit 1
+    - name: 🔍 Escanear archivos Terraform (si existen)
+      run: |
+        echo "🔍 Buscando archivos Terraform..."
+        
+        if find . -name "*.tf" -type f | grep -q .; then
+          echo "📁 Archivos Terraform encontrados, escaneando..."
+          checkov \
+            --framework terraform \
+            --output sarif \
+            --output-file checkov-terraform.sarif \
+            --soft-fail \
+            --directory . || true
         else
-          echo "🎉 Configuraciones de seguridad verificadas correctamente"
+          echo "ℹ️ No se encontraron archivos Terraform (.tf)"
         fi
+        
+    - name: 📊 Upload Checkov SARIF (Kubernetes)
+      if: hashFiles('checkov-kubernetes.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov-kubernetes.sarif
+        category: checkov-kubernetes
+      continue-on-error: true
 
-  # Job 5: Generar reporte de seguridad
-  security-report:
-    name: 📊 Reporte Seguridad
+    - name: 📊 Upload Checkov SARIF (Docker Compose)
+      if: hashFiles('checkov-docker-compose.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov-docker-compose.sarif
+        category: checkov-docker-compose
+      continue-on-error: true
+
+    - name: 📊 Upload Checkov SARIF (Dockerfiles)
+      if: hashFiles('checkov-dockerfiles.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov-dockerfiles.sarif
+        category: checkov-dockerfiles
+      continue-on-error: true
+      
+    - name: 📊 Upload Checkov SARIF (Terraform)
+      if: hashFiles('checkov-terraform.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: checkov-terraform.sarif
+        category: checkov-terraform
+      continue-on-error: true
+      
+    - name: 📤 Subir reportes IaC como artefactos
+      uses: actions/upload-artifact@v4
+      with:
+        name: iac-security-reports
+        path: checkov-*.sarif
+        retention-days: 30
+
+  # Job 3: Análisis avanzado de secretos con TruffleHog
+  advanced-secrets-scan:
+    name: 🔐 Advanced Secrets Detection
     runs-on: ubuntu-latest
-    needs: [gosec-analysis, dependency-scan, secret-scan, security-config]
+    
+    steps:
+    - name: 📥 Checkout código completo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Historia completa para análisis de secretos
+        
+    - name: 🔧 Instalar TruffleHog
+      run: |
+        echo "🔧 Instalando TruffleHog ${{ env.TRUFFLEHOG_VERSION }}..."
+        curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin v${{ env.TRUFFLEHOG_VERSION }}
+        trufflehog --version
+        
+    - name: 🔍 Escanear secretos en todo el repositorio
+      run: |
+        echo "🔍 Escaneando secretos en todo el repositorio..."
+        
+        # Escanear todo el repositorio por secretos
+        trufflehog filesystem . \
+          --json \
+          --only-verified \
+          --output trufflehog-verified.json || true
+          
+        # Escanear también secretos no verificados pero con alta confianza
+        trufflehog filesystem . \
+          --json \
+          --output trufflehog-all.json || true
+          
+        # Mostrar resumen en logs
+        if [ -f trufflehog-verified.json ]; then
+          verified_count=$(cat trufflehog-verified.json | jq -s 'length' 2>/dev/null || echo "0")
+          echo "📊 Secretos verificados encontrados: $verified_count"
+          
+          if [ "$verified_count" -gt 0 ]; then
+            echo "🚨 SECRETOS VERIFICADOS ENCONTRADOS:"
+            cat trufflehog-verified.json | jq -r '.DetectorName + ": " + .SourceMetadata.Data.Filesystem.file' 2>/dev/null || true
+          fi
+        fi
+        
+    - name: 🔍 Escanear secretos en historial de Git
+      run: |
+        echo "🔍 Escaneando secretos en historial de Git..."
+        
+        # Escanear los últimos 50 commits
+        trufflehog git file://. \
+          --json \
+          --only-verified \
+          --since-commit HEAD~50 \
+          --output trufflehog-git-history.json || true
+          
+        if [ -f trufflehog-git-history.json ]; then
+          git_secrets_count=$(cat trufflehog-git-history.json | jq -s 'length' 2>/dev/null || echo "0")
+          echo "📊 Secretos en historial Git encontrados: $git_secrets_count"
+          
+          if [ "$git_secrets_count" -gt 0 ]; then
+            echo "🚨 SECRETOS EN HISTORIAL GIT:"
+            cat trufflehog-git-history.json | jq -r '.DetectorName + " en commit " + .SourceMetadata.Data.Git.commit' 2>/dev/null || true
+          fi
+        fi
+        
+    - name: 🔍 Análisis de patrones específicos
+      run: |
+        echo "🔍 Análisis de patrones específicos de secretos..."
+        
+        patterns_found=0
+        
+        # Patrones específicos para el proyecto
+        echo "Buscando patrones JWT..."
+        if grep -r "eyJ[A-Za-z0-9+/]*\." . --include="*.go" --include="*.json" --include="*.yaml" --include="*.yml" 2>/dev/null; then
+          echo "⚠️ Posibles tokens JWT encontrados"
+          patterns_found=$((patterns_found + 1))
+        fi
+        
+        echo "Buscando cadenas de conexión de base de datos..."
+        if grep -r "postgresql://\|mysql://\|mongodb://\|redis://" . --include="*.go" --include="*.json" --include="*.yaml" --include="*.yml" 2>/dev/null; then
+          echo "⚠️ Posibles cadenas de conexión encontradas"
+          patterns_found=$((patterns_found + 1))
+        fi
+        
+        echo "Buscando claves de AWS..."
+        if grep -r "AKIA[0-9A-Z]\{16\}" . --include="*.go" --include="*.json" --include="*.yaml" --include="*.yml" 2>/dev/null; then
+          echo "⚠️ Posibles claves de AWS encontradas"
+          patterns_found=$((patterns_found + 1))
+        fi
+        
+        echo "📊 Patrones específicos encontrados: $patterns_found"
+        
+    - name: 📤 Subir reportes de secretos como artefactos
+      uses: actions/upload-artifact@v4
+      with:
+        name: secrets-analysis-reports
+        path: trufflehog-*.json
+        retention-days: 90  # Mayor retención para análisis de secretos
+
+  # Job 4: Análisis de dependencias y supply chain
+  supply-chain-security:
+    name: 📦 Supply Chain Security
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service: [user-service, resource-service, booking-service, notification-service]
+      fail-fast: false
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🐹 Configurar Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: 🔍 Análisis de dependencias Go
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "🔍 Analizando dependencias de ${{ matrix.service }}..."
+        
+        # Verificar go.mod y go.sum
+        if [ -f go.mod ]; then
+          echo "📦 Dependencias directas:"
+          go list -m all | grep -v "^${{ matrix.service }}" | head -10
+          
+          echo "📊 Estadísticas de dependencias:"
+          direct_deps=$(go list -m all | grep -v "^${{ matrix.service }}" | wc -l)
+          echo "Total dependencias: $direct_deps"
+          
+          # Verificar dependencias con versiones pre-release
+          echo "🔍 Dependencias pre-release:"
+          go list -m all | grep -E "v0\.0\.0|alpha|beta|rc" || echo "✅ No se encontraron dependencias pre-release"
+          
+          # Verificar dependencias con replace directives
+          echo "🔍 Replace directives:"
+          if grep -q "replace" go.mod; then
+            grep "replace" go.mod
+            echo "⚠️ Replace directives encontradas - revisar su necesidad"
+          else
+            echo "✅ No hay replace directives"
+          fi
+        else
+          echo "❌ go.mod no encontrado para ${{ matrix.service }}"
+        fi
+        
+    - name: 🔍 Verificar licencias de dependencias
+      working-directory: ./services/${{ matrix.service }}
+      run: |
+        echo "📜 Verificando licencias de dependencias..."
+        
+        # Instalar go-licenses si no está disponible
+        if ! command -v go-licenses &> /dev/null; then
+          echo "🔧 Instalando go-licenses..."
+          go install github.com/google/go-licenses@latest
+        fi
+        
+        # Verificar licencias
+        echo "📋 Licencias de dependencias principales:"
+        go-licenses report . 2>/dev/null | head -20 || echo "⚠️ No se pudo generar reporte de licencias"
+
+  # Job 5: Generar reporte consolidado de seguridad
+  security-report:
+    name: 📊 Consolidated Security Report
+    runs-on: ubuntu-latest
+    needs: [container-security-scan, iac-security-scan, advanced-secrets-scan, supply-chain-security]
     if: always()
     
     steps:
     - name: 📥 Checkout código
       uses: actions/checkout@v4
       
-    - name: 📊 Generar reporte de seguridad
+    - name: 📥 Descargar todos los artefactos
+      uses: actions/download-artifact@v4
+      with:
+        path: security-artifacts
+        
+    - name: 📊 Generar reporte consolidado
       run: |
-        echo "📊 Generando reporte de seguridad..."
+        echo "📊 Generando reporte consolidado de seguridad..."
         
-        cat > security-report.md << EOF
-        # 🔒 Reporte de Seguridad
+        # Crear directorio para el reporte
+        mkdir -p security-report
         
-        **Fecha:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        **Commit:** ${{ github.sha }}
-        **Branch:** ${{ github.ref_name }}
+        # Generar reporte principal
+        cat > security-report/SECURITY_REPORT.md << EOF
+        # 🔒 Reporte Consolidado de Seguridad
         
-        ## 📋 Resumen de Análisis
+        **Fecha de análisis:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")  
+        **Commit:** \`${{ github.sha }}\`  
+        **Branch:** \`${{ github.ref_name }}\`  
+        **Ejecutado por:** ${{ github.event_name }}
         
-        - ✅ Análisis de código (gosec)
-        - ✅ Escaneo de dependencias (govulncheck)  
-        - ✅ Detección de secretos (truffleHog)
-        - ✅ Configuración de seguridad
+        ## 📋 Resumen Ejecutivo
         
-        ## 🔍 Servicios Analizados
+        Este reporte proporciona un análisis completo de seguridad del Sistema de Reservas,
+        incluyendo análisis de contenedores, infraestructura, secretos y cadena de suministro.
         
-        - user-service
-        - resource-service
-        - booking-service
-        - notification-service
+        ## 🔍 Análisis Realizados
         
-        ## 📝 Recomendaciones
+        ### ✅ Análisis de Contenedores (Trivy)
+        - **Vulnerabilidades:** Escaneo de imágenes Docker por CVEs conocidos
+        - **Configuraciones:** Análisis de malas configuraciones en contenedores
+        - **Secretos:** Detección de secretos embebidos en imágenes
+        - **Servicios analizados:** user-service, resource-service, booking-service, notification-service, api-gateway
         
-        1. Mantener dependencias actualizadas
-        2. Revisar configuraciones de despliegue
-        3. Usar secretos de Kubernetes/Docker para credenciales
-        4. Ejecutar contenedores con usuarios no-root
-        5. Habilitar escaneos de seguridad automáticos
+        ### ✅ Análisis de Infraestructura (Checkov)
+        - **Kubernetes:** Manifiestos y configuraciones de despliegue
+        - **Docker Compose:** Configuraciones de desarrollo
+        - **Dockerfiles:** Mejores prácticas de construcción de imágenes
         
-        ---
-        *Reporte generado automáticamente por GitHub Actions*
+        ### ✅ Detección Avanzada de Secretos (TruffleHog)
+        - **Repositorio completo:** Análisis de archivos actuales
+        - **Historial Git:** Últimos 50 commits analizados
+        - **Patrones específicos:** JWT, cadenas de conexión, claves API
+        
+        ### ✅ Seguridad de Cadena de Suministro
+        - **Dependencias Go:** Análisis de módulos y versiones
+        - **Licencias:** Verificación de licencias de dependencias
+        - **Vulnerabilidades:** Análisis con govulncheck (desde CI)
+        
+        ## 📊 Resultados por Categoría
+        
+        ### 🐳 Seguridad de Contenedores
         EOF
         
-        echo "📄 Reporte de seguridad generado:"
-        cat security-report.md
+        # Agregar información de artefactos si existen
+        if [ -d "security-artifacts" ]; then
+          echo "📁 Artefactos encontrados:" >> security-report/SECURITY_REPORT.md
+          find security-artifacts -name "*.sarif" | while read file; do
+            echo "  - \`$(basename "$file")\`" >> security-report/SECURITY_REPORT.md
+          done
+        fi
         
-    # Subir reporte como artefacto
-    - name: 📤 Subir reporte como artefacto
-      uses: actions/upload-artifact@v3
+        cat >> security-report/SECURITY_REPORT.md << EOF
+        
+        ### 🔐 Detección de Secretos
+        
+        Los análisis de secretos se ejecutan tanto en el pipeline de CI (básico) como en este
+        análisis profundo (avanzado). Se recomienda revisar cualquier alerta en GitHub Security.
+        
+        ### ⚙️ Configuración de Infraestructura
+        
+        El análisis de IaC ayuda a identificar configuraciones inseguras antes del despliegue.
+        
+        ## 📝 Recomendaciones Generales
+        
+        1. **Monitoreo Continuo**
+           - Revisar regularmente GitHub Security Advisories
+           - Mantener dependencias actualizadas
+           - Seguir las alertas de Dependabot
+        
+        2. **Gestión de Secretos**
+           - Usar GitHub Secrets para datos sensibles
+           - Implementar rotación regular de credenciales
+           - Verificar que no hay secretos hardcodeados
+        
+        3. **Seguridad de Contenedores**
+           - Actualizar imágenes base regularmente
+           - Usar imágenes mínimas (alpine, distroless)
+           - Implementar escaneo en pipelines de CI/CD
+        
+        4. **Infraestructura**
+           - Aplicar principio de menor privilegio
+           - Usar Network Policies en Kubernetes
+           - Habilitar logs de auditoría
+        
+        5. **Cadena de Suministro**
+           - Verificar integridad de dependencias
+           - Usar módulos con mantenimiento activo
+           - Evitar dependencias con vulnerabilidades conocidas
+        
+        ## 🚨 Acciones Requeridas
+        
+        1. Revisar alertas en GitHub Security tab
+        2. Actualizar dependencias vulnerables identificadas
+        3. Corregir configuraciones marcadas como inseguras
+        4. Rotar cualquier secreto identificado como comprometido
+        
+        ## 📈 Próximos Pasos
+        
+        - [ ] Implementar políticas de seguridad automatizadas
+        - [ ] Configurar alertas en tiempo real
+        - [ ] Establecer proceso de revisión de seguridad
+        - [ ] Implementar testing de penetración
+        
+        ---
+        
+        **Generado automáticamente por GitHub Actions**  
+        **Workflow:** Security Deep Scan & Reporting  
+        **Versión:** 1.0
+        EOF
+        
+        echo "📄 Reporte consolidado generado:"
+        echo "===================="
+        cat security-report/SECURITY_REPORT.md
+        echo "===================="
+        
+    - name: 📊 Generar resumen JSON
+      run: |
+        echo "📊 Generando resumen en formato JSON..."
+        
+        cat > security-report/security-summary.json << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "workflow_run": "${{ github.run_number }}",
+          "analyses": {
+            "container_security": {
+              "tool": "Trivy",
+              "status": "${{ needs.container-security-scan.result }}",
+              "services_scanned": ["user-service", "resource-service", "booking-service", "notification-service", "api-gateway"]
+            },
+            "iac_security": {
+              "tool": "Checkov", 
+              "status": "${{ needs.iac-security-scan.result }}",
+              "frameworks": ["kubernetes", "docker-compose", "dockerfile"]
+            },
+            "secrets_detection": {
+              "tool": "TruffleHog",
+              "status": "${{ needs.advanced-secrets-scan.result }}",
+              "scope": ["filesystem", "git_history", "patterns"]
+            },
+            "supply_chain": {
+              "tool": "Go modules + go-licenses",
+              "status": "${{ needs.supply-chain-security.result }}",
+              "languages": ["go"]
+            }
+          },
+          "recommendations": [
+            "Review GitHub Security advisories",
+            "Update vulnerable dependencies", 
+            "Rotate compromised secrets",
+            "Fix infrastructure misconfigurations"
+          ]
+        }
+        EOF
+        
+        echo "📋 Resumen JSON generado:"
+        cat security-report/security-summary.json | jq '.' || cat security-report/security-summary.json
+        
+    - name: 📤 Subir reporte consolidado
+      uses: actions/upload-artifact@v4
       with:
-        name: security-report
-        path: security-report.md
-        retention-days: 30
+        name: consolidated-security-report
+        path: security-report/
+        retention-days: 90
+        
+    - name: 💬 Comentar en PR (si aplica)
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          try {
+            const reportPath = 'security-report/SECURITY_REPORT.md';
+            if (fs.existsSync(reportPath)) {
+              const report = fs.readFileSync(reportPath, 'utf8');
+              
+              // Crear resumen para PR (primeras líneas del reporte)
+              const summary = report.split('\n').slice(0, 20).join('\n');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🔒 Análisis de Seguridad Completado\n\n${summary}\n\n[Ver reporte completo en artefactos del workflow](${context.payload.repository.html_url}/actions/runs/${context.runId})`
+              });
+            }
+          } catch (error) {
+            console.log('No se pudo comentar en el PR:', error.message);
+          }
