@@ -26,7 +26,7 @@ on:
 # Variables de entorno globales
 env:
   TRIVY_VERSION: '0.48.3'
-  CHECKOV_VERSION: '3.1.0'
+  CHECKOV_VERSION: '3.2.442'
   TRUFFLEHOG_VERSION: '3.63.2'
   GO_VERSION: '1.24.4'
 
